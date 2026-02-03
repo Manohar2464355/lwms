@@ -37,21 +37,48 @@ public class UserService {
         return userRepo.findAll();
     }
 
+    /**
+     * FIXED: Added this method to satisfy the AdminUserController call.
+     * This replaces a user's roles with the single one selected in the UI.
+     */
+    public UserAccount setUserRole(UserRoleUpdateDTO dto) {
+        Optional<UserAccount> userOpt = userRepo.findByUsername(dto.getUsername());
+        if (userOpt.isEmpty()) {
+            throw new ResourceNotFoundException("User not found: " + dto.getUsername());
+        }
+        UserAccount user = userOpt.get();
+
+        String roleName = formatRole(dto.getRole());
+        Optional<Role> roleOpt = roleRepo.findByName(roleName);
+
+        Role role;
+        if (roleOpt.isEmpty()) {
+            // Self-healing: Create the role if it doesn't exist in the DB yet
+            role = roleRepo.save(new Role(roleName));
+        } else {
+            role = roleOpt.get();
+        }
+
+        // Using a HashSet to ensure a fresh, clean role assignment
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
+        user.setRoles(roles);
+
+        return userRepo.save(user);
+    }
+
     public UserAccount createUser(UserCreateDTO dto) {
-        // 1. Check if user already exists
         Optional<UserAccount> existing = userRepo.findByUsername(dto.getUsername());
         if (existing.isPresent()) {
             throw new BusinessException("Username already exists: " + dto.getUsername());
         }
 
-        // 2. Map DTO to Entity
         UserAccount u = new UserAccount();
         u.setUsername(dto.getUsername());
         u.setEmail(dto.getEmail());
-        u.setPassword(encoder.encode(dto.getPassword())); // Encrypting the password
+        u.setPassword(encoder.encode(dto.getPassword()));
         u.setEnabled(true);
 
-        // 3. Handle Role
         String roleName = formatRole(dto.getRole());
         Optional<Role> roleOpt = roleRepo.findByName(roleName);
 
@@ -72,12 +99,13 @@ public class UserService {
     public UserAccount grantRole(String username, String roleSimpleName) {
         Optional<UserAccount> userOpt = userRepo.findByUsername(username);
         if (userOpt.isEmpty()) {
-            throw new ResourceNotFoundException("User not found");
+            throw new ResourceNotFoundException("User not found: " + username);
         }
         UserAccount user = userOpt.get();
 
         String roleName = formatRole(roleSimpleName);
         Optional<Role> roleOpt = roleRepo.findByName(roleName);
+
         if (roleOpt.isEmpty()) {
             throw new BusinessException("Role not found: " + roleName);
         }
@@ -89,23 +117,22 @@ public class UserService {
     public UserAccount revokeRole(String username, String roleSimpleName) {
         Optional<UserAccount> userOpt = userRepo.findByUsername(username);
         if (userOpt.isEmpty()) {
-            throw new ResourceNotFoundException("User not found");
+            throw new ResourceNotFoundException("User not found: " + username);
         }
         UserAccount user = userOpt.get();
 
         String roleName = formatRole(roleSimpleName);
 
-        // SIMPLE FOR-LOOP REPLACEMENT FOR removeIf
-        Role roleToRemove = null;
+        Role toRemove = null;
         for (Role r : user.getRoles()) {
             if (r.getName().equals(roleName)) {
-                roleToRemove = r;
+                toRemove = r;
                 break;
             }
         }
 
-        if (roleToRemove != null) {
-            user.getRoles().remove(roleToRemove);
+        if (toRemove != null) {
+            user.getRoles().remove(toRemove);
         }
 
         if (user.getRoles().isEmpty()) {
@@ -113,6 +140,13 @@ public class UserService {
         }
 
         return userRepo.save(user);
+    }
+
+    public void deleteUser(Long id) {
+        if (!userRepo.existsById(id)) {
+            throw new ResourceNotFoundException("User not found with ID: " + id);
+        }
+        userRepo.deleteById(id);
     }
 
     private String formatRole(String role) {
