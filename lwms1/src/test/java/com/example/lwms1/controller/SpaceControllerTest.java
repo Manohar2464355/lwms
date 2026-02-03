@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(SpaceController.class)
-@WithMockUser(roles = "ADMIN") // Matches your @PreAuthorize("hasRole('ADMIN')")
+@WithMockUser(roles = "ADMIN")
 public class SpaceControllerTest {
 
     @Autowired
@@ -35,7 +35,8 @@ public class SpaceControllerTest {
         mockMvc.perform(get("/admin/space"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/space/usage"))
-                .andExpect(model().attributeExists("spaces", "form", "alloc"));
+                // Removed "alloc" as it is no longer used in the controller
+                .andExpect(model().attributeExists("spaces", "form"));
     }
 
     @Test
@@ -43,7 +44,7 @@ public class SpaceControllerTest {
         mockMvc.perform(post("/admin/space/add")
                         .param("zone", "Zone A")
                         .param("totalCapacity", "100")
-                        .with(csrf())) // Required for Spring Security
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/space"))
                 .andExpect(flash().attributeExists("success"));
@@ -53,7 +54,6 @@ public class SpaceControllerTest {
 
     @Test
     void testAddSpaceValidationFailure() throws Exception {
-        // Sending empty zone to trigger @Valid failure
         mockMvc.perform(post("/admin/space/add")
                         .param("zone", "")
                         .param("totalCapacity", "-5")
@@ -67,7 +67,6 @@ public class SpaceControllerTest {
 
     @Test
     void testEditPageLoads() throws Exception {
-        // Mocking a space entity (replace 'Space' with your actual Entity name)
         var mockSpace = new com.example.lwms1.model.Space();
         mockSpace.setZone("Zone B");
         mockSpace.setTotalCapacity(50);

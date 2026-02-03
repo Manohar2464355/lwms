@@ -1,6 +1,5 @@
 package com.example.lwms1.service;
 
-import com.example.lwms1.dto.SpaceAllocationDTO;
 import com.example.lwms1.dto.SpaceDTO;
 import com.example.lwms1.exception.BusinessException;
 import com.example.lwms1.exception.ResourceNotFoundException;
@@ -58,54 +57,13 @@ public class SpaceServiceTest {
     }
 
     @Test
-    @DisplayName("Allocate: Should increase used capacity on success")
-    void testAllocateSuccess() {
-        SpaceAllocationDTO alloc = new SpaceAllocationDTO();
-        alloc.setAmount(20);
-
-        when(repo.findById(1)).thenReturn(Optional.of(mockSpace));
-        when(repo.save(any(Space.class))).thenReturn(mockSpace);
-
-        Space result = spaceService.allocate(1, alloc);
-
-        assertEquals(60, result.getUsedCapacity());
-        assertEquals(40, result.getAvailableCapacity());
-    }
-
-    @Test
-    @DisplayName("Allocate: Should throw BusinessException when capacity exceeded")
-    void testAllocateOverlimit() {
-        SpaceAllocationDTO alloc = new SpaceAllocationDTO();
-        alloc.setAmount(70); // 40 + 70 = 110 (Max 100)
-
-        when(repo.findById(1)).thenReturn(Optional.of(mockSpace));
-
-        assertThrows(BusinessException.class, () -> spaceService.allocate(1, alloc));
-        verify(repo, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Free: Should decrease used capacity but never go below 0")
-    void testFreeCapacity() {
-        SpaceAllocationDTO freeDto = new SpaceAllocationDTO();
-        freeDto.setAmount(50); // 40 - 50 = -10 (Should reset to 0)
-
-        when(repo.findById(1)).thenReturn(Optional.of(mockSpace));
-        when(repo.save(any(Space.class))).thenReturn(mockSpace);
-
-        Space result = spaceService.free(1, freeDto);
-
-        assertEquals(0, result.getUsedCapacity());
-        assertEquals(100, result.getAvailableCapacity());
-    }
-
-    @Test
     @DisplayName("Delete: Should throw error if zone still contains items")
     void testDeleteNonEmptyZone() {
         when(repo.findById(1)).thenReturn(Optional.of(mockSpace)); // UsedCapacity is 40
 
         BusinessException ex = assertThrows(BusinessException.class, () -> spaceService.delete(1));
-        assertTrue(ex.getMessage().contains("still contains"));
+        // Matches the simplified message: "is not empty. Remove items first."
+        assertTrue(ex.getMessage().contains("not empty"));
         verify(repo, never()).delete(any());
     }
 

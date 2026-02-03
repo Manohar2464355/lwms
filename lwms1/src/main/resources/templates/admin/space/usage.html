@@ -54,8 +54,7 @@
             <thead>
             <tr>
                 <th>Zone</th>
-                <th>Capacity</th>
-                <th>Inventory Control</th>
+                <th>Capacity (Used / Total)</th>
                 <th>Utilization</th>
                 <th>Actions</th>
             </tr>
@@ -72,34 +71,14 @@
                     <span th:text="${s.usedCapacity + ' / ' + s.totalCapacity}"></span>
                 </td>
 
-                <td>
-                    <div class="allocation-box">
-                        <form th:action="@{/admin/space/allocate/{id}(id=${s.spaceId})}" method="post" style="display: flex; gap: 5px;">
-                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <input type="number" name="amount" value="1" min="1" class="qty-input">
-                            <button type="submit" class="btn-action btn-allocate" title="Add Items">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </form>
-
-                        <form th:action="@{/admin/space/free/{id}(id=${s.spaceId})}" method="post">
-                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <input type="hidden" name="amount" value="1">
-                            <button type="submit" class="btn-action btn-free" title="Remove 1 Item">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                        </form>
-                    </div>
-                </td>
-
-                <td style="width: 200px;">
+                <td style="width: 250px;">
                     <div th:with="percent=${(s.usedCapacity * 100.0) / s.totalCapacity}">
-                        <div class="progress-container">
+                        <div class="progress-container" style="background: #eee; border-radius: 10px; height: 10px; overflow: hidden;">
                             <div class="progress-bar"
-                                 th:style="'width: ' + ${percent} + '%; background-color: ' + (${percent} > 90 ? 'var(--danger)' : (${percent} > 70 ? 'var(--warning)' : 'var(--success)'))">
+                                 th:style="'width: ' + ${percent} + '%; height:100%; background-color: ' + (${percent} > 90 ? '#e74c3c' : (${percent} > 70 ? '#f1c40f' : '#2ecc71'))">
                             </div>
                         </div>
-                        <small th:text="${#numbers.formatDecimal(percent, 1, 1) + '%'}"></small>
+                        <small th:text="${#numbers.formatDecimal(percent, 1, 1) + '% filled'}"></small>
                     </div>
                 </td>
 
@@ -111,17 +90,15 @@
 
                         <form th:action="@{/admin/space/delete/{id}(id=${s.spaceId})}" method="post" onsubmit="return confirm('Delete this zone?')">
                             <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; padding: 0;">
+                            <button type="submit" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 18px;">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>
                     </div>
                 </td>
             </tr>
-            <tr th:if="${#lists.isEmpty(spaces)}">
-                <td colspan="5" style="text-align: center; color: #888; padding: 30px;">No storage zones found.</td>
-            </tr>
             </tbody>
+        </table>
         </table>
     </div>
 </div>

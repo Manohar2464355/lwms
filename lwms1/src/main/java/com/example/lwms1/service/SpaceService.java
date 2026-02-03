@@ -1,6 +1,5 @@
 package com.example.lwms1.service;
 
-import com.example.lwms1.dto.SpaceAllocationDTO;
 import com.example.lwms1.dto.SpaceDTO;
 import com.example.lwms1.exception.BusinessException;
 import com.example.lwms1.exception.ResourceNotFoundException;
@@ -40,14 +39,10 @@ public class SpaceService {
         Space s = new Space();
         s.setZone(dto.getZone());
 
-        // Simple validation for capacity
-        int total = 1;
-        if (dto.getTotalCapacity() != null && dto.getTotalCapacity() > 0) {
-            total = dto.getTotalCapacity();
-        }
+        int total = (dto.getTotalCapacity() != null && dto.getTotalCapacity() > 0) ? dto.getTotalCapacity() : 1;
 
         s.setTotalCapacity(total);
-        s.setUsedCapacity(0); // New zones are empty
+        s.setUsedCapacity(0);
         s.setAvailableCapacity(total);
 
         return repo.save(s);
@@ -60,10 +55,8 @@ public class SpaceService {
         s.setZone(dto.getZone());
         s.setTotalCapacity(dto.getTotalCapacity());
 
-        // Math: Total - Used = Available
         int available = s.getTotalCapacity() - s.getUsedCapacity();
 
-        // Safety Check: Don't allow total capacity to be less than current stock
         if (available < 0) {
             throw new BusinessException("Cannot reduce total capacity below current stock levels!");
         }
@@ -76,43 +69,10 @@ public class SpaceService {
     public void delete(Integer id) {
         Space s = getById(id);
 
-        // Business Rule: Can't delete a zone that has items in it
         if (s.getUsedCapacity() > 0) {
             throw new BusinessException("Zone " + s.getZone() + " is not empty. Remove items first.");
         }
 
         repo.delete(s);
-    }
-
-    @Transactional
-    public Space allocate(Integer id, SpaceAllocationDTO dto) {
-        Space s = getById(id);
-
-        int newUsed = s.getUsedCapacity() + dto.getAmount();
-
-        // Check if we have room
-        if (newUsed > s.getTotalCapacity()) {
-            throw new BusinessException("Insufficient space in " + s.getZone());
-        }
-
-        s.setUsedCapacity(newUsed);
-        s.setAvailableCapacity(s.getTotalCapacity() - newUsed);
-        return repo.save(s);
-    }
-
-    @Transactional
-    public Space free(Integer id, SpaceAllocationDTO dto) {
-        Space s = getById(id);
-
-        int newUsed = s.getUsedCapacity() - dto.getAmount();
-
-        // Safety: Capacity can't be negative
-        if (newUsed < 0) {
-            newUsed = 0;
-        }
-
-        s.setUsedCapacity(newUsed);
-        s.setAvailableCapacity(s.getTotalCapacity() - newUsed);
-        return repo.save(s);
     }
 }
