@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Account - LWMS Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/profile.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}" class="active-link"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="profile-wrapper">
+        <header class="profile-header">
+            <div class="avatar-circle" th:text="${#strings.substring(username, 0, 1).toUpperCase()}">U</div>
+            <div class="header-info">
+                <h1 th:text="${username}">User Name</h1>
+                <p>Warehouse Operations Staff • Site ID: LWMS-HQ</p>
+            </div>
+        </header>
+
+        <section class="info-group">
+            <span class="section-label">Account Details</span>
+            <div class="grid-info">
+                <div class="field">
+                    <span class="label">Status</span>
+                    <span class="value"><span class="status-pill">Active Profile</span></span>
+                </div>
+                <div class="field">
+                    <span class="label">System Username</span>
+                    <span class="value" th:text="${username}">username</span>
+                </div>
+                <div class="field">
+                    <span class="label">Assigned Roles</span>
+                    <span class="value">
+                        <span th:each="role : ${roles}" th:text="${#strings.replace(role.authority, 'ROLE_', '')}" style="margin-right: 8px;"></span>
+                    </span>
+                </div>
+                <div class="field">
+                    <span class="label">Session Started</span>
+                    <span class="value" th:text="${#dates.format(#dates.createNow(), 'MMM dd, HH:mm')}">Time</span>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer-actions">
+            <div style="color: var(--text-muted); font-size: 0.85rem;">
+                <i class="fas fa-shield-alt"></i> Secure Session Active
+            </div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="logout-link">Sign Out</button>
+            </form>
+        </footer>
+    </div>
+</div>
+
+</body>
+</html>

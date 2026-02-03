@@ -3,43 +3,47 @@ package com.example.lwms1.controller;
 import com.example.lwms1.dto.ReportDTO;
 import com.example.lwms1.model.Report;
 import com.example.lwms1.service.ReportService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
 @Controller
 @RequestMapping("/admin/reports")
-// 1. Temporarily comment out Security to see if the page loads
-// @PreAuthorize("hasRole('ADMIN')")
 public class ReportController {
 
     private final ReportService service;
-    public ReportController(ReportService service) { this.service = service; }
+
+    @Autowired
+    public ReportController(ReportService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public String list(Model model) {
-        // 2. Ensure the attribute name "reports" matches your th:each="r : ${reports}"
         List<Report> allReports = service.listAll();
         model.addAttribute("reports", allReports);
-
-        // 3. This MUST be here or th:object="${form}" will cause a 500 error
         model.addAttribute("form", new ReportDTO());
-
-        // 4. Ensure this path is EXACTLY where your file is
-        return "report/list";
+        return "admin/report/list";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/generate")
-    public String generate(@ModelAttribute("form") ReportDTO dto) {
+    public String generate(@ModelAttribute("form") ReportDTO dto, RedirectAttributes ra) {
         service.generate(dto);
+        ra.addFlashAttribute("successMessage", "Report for " + dto.getReportType() + " generated!");
         return "redirect:/admin/reports";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/delete/{id}")
-    public String delete(@PathVariable Integer id) {
+    public String delete(@PathVariable Integer id, RedirectAttributes ra) {
         service.delete(id);
+        ra.addFlashAttribute("successMessage", "Report deleted successfully.");
         return "redirect:/admin/reports";
     }
 }

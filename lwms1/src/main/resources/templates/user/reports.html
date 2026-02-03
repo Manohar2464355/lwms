@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Warehouse Reports - Staff Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/reports.css}">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}" class="active-link"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+        <h1>Operational Reports</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0"><i class="fas fa-history"></i> Generated Report History</h3>
+        <p style="color: #7f8c8d; font-size: 0.9rem;">Review and download official snapshots of warehouse data.</p>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Category</th>
+                <th>Generated On</th>
+                <th>Data Preview</th>
+                <th style="text-align:center;">Download</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${reports}" th:id="'row-' + ${r.reportId}">
+                <td th:text="'#RPT-' + ${r.reportId}" style="font-weight:bold;"></td>
+                <td>
+                    <span class="report-badge" th:text="${r.reportType}"></span>
+                </td>
+                <td th:text="${#temporals.format(r.generatedOn, 'yyyy-MM-dd HH:mm')}"></td>
+                <td>
+                    <div class="report-details-cell" th:text="${r.details}"></div>
+                </td>
+                <td style="text-align:center;">
+                    <button type="button" class="btn-pdf"
+                            th:onclick="'generatePDF(' + ${r.reportId} + ')'" title="Export to PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </button>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(reports)}">
+                <td colspan="5" style="text-align:center; padding:30px; color:#999;">No reports available in the archive.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    function generatePDF(reportId) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const row = document.getElementById('row-' + reportId);
+        const type = row.cells[1].innerText;
+        const date = row.cells[2].innerText;
+        const details = row.cells[3].innerText;
+
+        doc.setFillColor(44, 62, 80);
+        doc.rect(0, 0, 210, 30, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.text("LWMS PRO - STAFF REPORT", 15, 20);
+
+        doc.setTextColor(40, 40, 40);
+        doc.setFontSize(11);
+        doc.text("Report Type: " + type, 15, 45);
+        doc.text("Date Generated: " + date, 15, 52);
+        doc.line(15, 57, 195, 57);
+
+        doc.setFont("courier", "normal");
+        doc.setFontSize(9);
+        const splitText = doc.splitTextToSize(details, 180);
+        doc.text(splitText, 15, 70);
+
+        doc.setFontSize(8);
+        doc.text("Logistics Warehouse Management System - Internal Use Only", 105, 285, null, null, "center");
+        doc.save("Report_" + type + "_" + reportId + ".pdf");
+    }
+</script>
+
+</body>
+</html>

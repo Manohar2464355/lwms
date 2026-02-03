@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Shipment Log - LWMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/shipments.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}" class="active-link"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Inbound & Outbound Log</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Item</th>
+                <th>Origin</th>
+                <th>Destination</th>
+                <th>Delivery Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${shipmentList}">
+                <td th:text="${s.shipmentId}"></td>
+                <td th:text="${s.inventory != null ? s.inventory.itemName : 'N/A'}" style="font-weight: 500;"></td>
+                <td th:text="${s.origin}"></td>
+                <td th:text="${s.destination}"></td>
+                <td th:text="${s.expectedDeliveryDate}"></td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${s.status == 'DELIVERED'} ? 'bg-delivered' : (${s.status == 'IN_TRANSIT'} ? 'bg-transit' : 'bg-pending')"
+                          th:text="${s.status}">
+                    </span>
+                </td>
+                <td>
+                    <a th:href="@{/user/shipments/track/{id}(id=${s.shipmentId})}" class="btn-track">
+                        <i class="fas fa-map-marker-alt"></i> Track
+                    </a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(shipmentList)}">
+                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">No active shipments found.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

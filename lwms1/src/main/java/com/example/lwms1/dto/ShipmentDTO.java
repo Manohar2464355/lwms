@@ -11,6 +11,9 @@ public class ShipmentDTO {
     @NotBlank private String origin;
     @NotBlank private String destination;
     private String status;
+    @Min(value = 1, message = "Must ship at least 1 item")
+    private Integer quantity;
+
 
     @FutureOrPresent(message = "Delivery date cannot be in the past")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
@@ -32,4 +35,6 @@ public class ShipmentDTO {
     public void setExpectedDeliveryDate(java.time.LocalDate expectedDeliveryDate) {
         this.expectedDeliveryDate = expectedDeliveryDate;
     }
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
 }

@@ -42,6 +42,15 @@ public class Inventory {
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+
+    public Space getStorageSpace() {
+        return storageSpace;
+    }
+
+    public void setStorageSpace(Space storageSpace) {
+        this.storageSpace = storageSpace;
+    }
+
     public LocalDateTime getLastUpdated() { return lastUpdated; }
     public void setLastUpdated(LocalDateTime lastUpdated) { this.lastUpdated = lastUpdated; }
 }

@@ -7,34 +7,63 @@ import com.example.lwms1.model.Inventory;
 import com.example.lwms1.model.Space;
 import com.example.lwms1.repository.InventoryRepository;
 import com.example.lwms1.repository.SpaceRepository;
+import com.example.lwms1.repository.MaintenanceScheduleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InventoryService {
 
     private final InventoryRepository repo;
     private final SpaceRepository spaceRepo;
+    private final MaintenanceScheduleRepository maintenanceRepo;
 
-    public InventoryService(InventoryRepository repo, SpaceRepository spaceRepo) {
+    @Autowired
+    public InventoryService(InventoryRepository repo,
+                            SpaceRepository spaceRepo,
+                            MaintenanceScheduleRepository maintenanceRepo) {
         this.repo = repo;
         this.spaceRepo = spaceRepo;
+        this.maintenanceRepo = maintenanceRepo;
     }
 
-    public List<Inventory> listAll() { return repo.findAll(); }
+    private void verifySpaceIsNotUnderMaintenance(Integer spaceId, String zoneName) {
+        boolean isLocked = maintenanceRepo.existsByEquipmentIdAndCompletionStatusIgnoreCase(spaceId, "PENDING");
+        if (isLocked) {
+            throw new BusinessException("Action Denied: Zone " + zoneName + " is currently under maintenance.");
+        }
+    }
+
+    public Inventory findById(Integer id) {
+        Optional<Inventory> itemOpt = repo.findById(id);
+        if (itemOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Item not found with ID: " + id);
+        }
+        return itemOpt.get();
+    }
+
+    public List<Inventory> listAll() {
+        return repo.findAll();
+    }
 
     @Transactional
     public void delete(Integer id) {
-        Inventory inv = repo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Item not found with ID: " + id));
+        Inventory inv = findById(id);
 
         if (inv.getLocation() != null) {
-            spaceRepo.findByZone(inv.getLocation()).ifPresent(space -> {
-                updateSpaceCapacity(space, -inv.getQuantity());
-            });
+            Optional<Space> spaceOpt = spaceRepo.findByZone(inv.getLocation());
+            if (spaceOpt.isEmpty()) {
+                throw new ResourceNotFoundException("Space not found");
+            }
+            Space space = spaceOpt.get();
+
+            verifySpaceIsNotUnderMaintenance(space.getSpaceId(), space.getZone());
+            updateSpaceCapacity(space, -inv.getQuantity());
         }
         repo.delete(inv);
     }
@@ -45,9 +74,13 @@ public class InventoryService {
             throw new BusinessException("Storage location is required.");
         }
 
-        Integer spaceId = Integer.parseInt(dto.getLocation());
-        Space space = spaceRepo.findById(spaceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Target Space not found"));
+        Optional<Space> spaceOpt = spaceRepo.findByZone(dto.getLocation());
+        if (spaceOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Target Space '" + dto.getLocation() + "' not found");
+        }
+        Space space = spaceOpt.get();
+
+        verifySpaceIsNotUnderMaintenance(space.getSpaceId(), space.getZone());
 
         if (space.getAvailableCapacity() < dto.getQuantity()) {
             throw new BusinessException("Insufficient space in " + space.getZone());
@@ -58,28 +91,29 @@ public class InventoryService {
         inv.setCategory(dto.getCategory());
         inv.setQuantity(dto.getQuantity());
         inv.setLocation(space.getZone());
+        inv.setStorageSpace(space);
         inv.setLastUpdated(LocalDateTime.now());
 
         updateSpaceCapacity(space, dto.getQuantity());
         return repo.save(inv);
     }
 
-    // THIS IS THE MISSING METHOD THAT WAS CAUSING YOUR COMPILE ERROR
     @Transactional
     public Inventory update(Integer id, InventoryDTO dto) {
-        Inventory inv = repo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Inventory not found: " + id));
+        Inventory inv = findById(id);
 
-        Space space = spaceRepo.findByZone(inv.getLocation())
-                .orElseThrow(() -> new ResourceNotFoundException("Associated Space not found for: " + inv.getLocation()));
+        Optional<Space> spaceOpt = spaceRepo.findByZone(inv.getLocation());
+        if (spaceOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Space not found");
+        }
+        Space space = spaceOpt.get();
 
-        // Calculate if we are adding or removing quantity
-        // Example: If old qty was 10 and new is 15, adjustment is +5 (uses more space)
-        // If old was 10 and new is 8, adjustment is -2 (frees space)
+        verifySpaceIsNotUnderMaintenance(space.getSpaceId(), space.getZone());
+
         int capacityAdjustment = dto.getQuantity() - inv.getQuantity();
 
         if (space.getAvailableCapacity() < capacityAdjustment) {
-            throw new BusinessException("Not enough room for this update in " + space.getZone());
+            throw new BusinessException("Not enough room in " + space.getZone());
         }
 
         inv.setItemName(dto.getItemName());
@@ -88,17 +122,28 @@ public class InventoryService {
         inv.setLastUpdated(LocalDateTime.now());
 
         updateSpaceCapacity(space, capacityAdjustment);
-
         return repo.save(inv);
     }
 
     private void updateSpaceCapacity(Space space, int quantityChange) {
-        int currentUsed = (space.getUsedCapacity() == null) ? 0 : space.getUsedCapacity();
-        int total = (space.getTotalCapacity() == null) ? 0 : space.getTotalCapacity();
+        int currentUsed = 0;
+        if (space.getUsedCapacity() != null) {
+            currentUsed = space.getUsedCapacity();
+        }
+
+        int total = 0;
+        if (space.getTotalCapacity() != null) {
+            total = space.getTotalCapacity();
+        }
 
         int newUsed = currentUsed + quantityChange;
-        space.setUsedCapacity(Math.max(0, newUsed));
-        space.setAvailableCapacity(total - space.getUsedCapacity());
+
+        if (newUsed < 0) {
+            newUsed = 0;
+        }
+
+        space.setUsedCapacity(newUsed);
+        space.setAvailableCapacity(total - newUsed);
 
         spaceRepo.save(space);
     }

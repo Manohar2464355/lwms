@@ -1,0 +1,140 @@
+:root {
+    --sidebar-width: 250px;
+    --primary-bg: #f4f7f6;
+    --accent-color: #2ecc71;
+    --dark-navy: #2c3e50;
+    --danger: #e74c3c;
+    --info-blue: #2980b9;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background-color: var(--primary-bg);
+    display: flex;
+}
+
+/* Sidebar Layout */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--dark-navy);
+    color: white;
+    position: fixed;
+    padding-top: 20px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    color: var(--accent-color);
+}
+
+.sidebar a {
+    display: block;
+    padding: 15px 25px;
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    background: #34495e;
+    border-left: 4px solid var(--accent-color);
+}
+
+.active-link {
+    background: #34495e;
+    border-left: 4px solid var(--accent-color);
+}
+
+/* Main Content Area */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 30px;
+    width: calc(100% - var(--sidebar-width));
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header p { color: #666; margin-top: -5px; }
+
+/* Space Grid & Cards */
+.space-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-top: 4px solid var(--accent-color);
+}
+
+.zone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.zone-name {
+    font-weight: bold;
+    color: var(--dark-navy);
+    font-size: 1.2rem;
+}
+
+/* Progress Bar */
+.progress-container {
+    background: #eee;
+    height: 14px;
+    border-radius: 7px;
+    margin: 15px 0;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.progress-bar {
+    height: 100%;
+    transition: width 0.6s ease-in-out;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #333;
+}
+
+.available-row {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #eee;
+}
+
+/* Buttons */
+.logout-btn {
+    background: var(--danger);
+    color: white;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.logout-btn:hover { background: #c0392b; }

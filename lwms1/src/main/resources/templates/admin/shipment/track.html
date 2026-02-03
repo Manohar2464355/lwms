@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Track Shipment - LWMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin/shipment-track.css}">
+</head>
+<body>
+
+<div class="track-card">
+    <div class="status-banner">
+        <i class="fas fa-map-marker-alt"></i> STATUS: <span th:text="${shipment.status}"></span>
+    </div>
+
+    <h2>Tracking ID: #<span th:text="${shipment.shipmentId}"></span></h2>
+
+    <div class="info-row">
+        <span class="info-label">Item Name:</span>
+        <span class="info-value" th:text="${shipment.inventory != null ? shipment.inventory.itemName : 'N/A'}"></span>
+    </div>
+
+    <div class="info-row">
+        <span class="info-label">Origin:</span>
+        <span class="info-value" th:text="${shipment.origin}"></span>
+    </div>
+
+    <div class="info-row">
+        <span class="info-label">Destination:</span>
+        <span class="info-value" th:text="${shipment.destination}"></span>
+    </div>
+
+    <div class="info-row">
+        <span class="info-label">Expected Delivery:</span>
+        <span class="info-value" th:text="${shipment.expectedDeliveryDate}"></span>
+    </div>
+
+    <a th:href="@{/admin/shipments}" class="back-link"><i class="fas fa-arrow-left"></i> Return to Logistics</a>
+</div>
+
+</body>
+</html>

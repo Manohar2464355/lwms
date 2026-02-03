@@ -1,0 +1,150 @@
+:root {
+    --sidebar-width: 250px;
+    --primary-bg: #f4f7f6;
+    --accent-color: #2ecc71;
+    --dark-navy: #2c3e50;
+    --danger: #e74c3c;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background-color: var(--primary-bg);
+    display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--dark-navy);
+    color: white;
+    position: fixed;
+    padding-top: 20px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    color: var(--accent-color);
+}
+
+.sidebar a {
+    display: block;
+    padding: 15px 25px;
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    background: #34495e;
+    border-left: 4px solid var(--accent-color);
+}
+
+/* Main Content */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 30px;
+    width: calc(100% - var(--sidebar-width));
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.track-header {
+    border-bottom: 2px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Progress Bar Logic */
+.progress-container {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.progress-line {
+    position: absolute;
+    top: 15px;
+    left: 10%;
+    width: 80%;
+    height: 4px;
+    background: #ddd;
+    z-index: 1;
+}
+
+.progress-fill {
+    position: absolute;
+    top: 15px;
+    left: 10%;
+    height: 4px;
+    background: var(--accent-color);
+    z-index: 2;
+    transition: 0.5s ease;
+}
+
+/* Status Widths */
+.fill-pending { width: 0%; }
+.fill-transit { width: 40%; }
+.fill-delivered { width: 80%; }
+
+.step { z-index: 3; text-align: center; width: 100px; }
+.circle {
+    width: 35px;
+    height: 35px;
+    background: #ddd;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    color: white;
+}
+
+.step.active .circle { background: var(--accent-color); }
+.step.active .step-text { color: var(--dark-navy); font-weight: bold; }
+.step-text { font-size: 0.8rem; color: #999; }
+
+/* Information Grid */
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.detail-item label {
+    display: block;
+    color: #888;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.detail-item span { font-weight: 600; color: var(--dark-navy); }
+
+.btn-back {
+    display: inline-block;
+    margin-top: 25px;
+    color: #7f8c8d;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.btn-back:hover { color: var(--dark-navy); }

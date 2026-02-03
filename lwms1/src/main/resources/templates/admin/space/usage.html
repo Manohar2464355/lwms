@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Space Management - LWMS</title>
+    <link rel="stylesheet" th:href="@{/css/admin/space.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Pro</h2>
+    <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-home"></i> Dashboard</a>
+    <a th:href="@{/user/home}" sec:authorize="hasRole('USER')"><i class="fas fa-home"></i> Home</a>
+    <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
+    <a th:href="@{/admin/shipments}"><i class="fas fa-truck"></i> Shipments</a>
+    <a th:href="@{/admin/space}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-warehouse"></i> Space</a>
+    <a th:href="@{/admin/maintenance}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-users"></i> User Management</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-chart-line"></i> Reports</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Warehouse Space Analysis</h1>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success">
+        <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> <span th:text="${error}"></span>
+    </div>
+
+    <div class="card" sec:authorize="hasRole('ADMIN')">
+        <h3><i class="fas fa-plus-circle"></i> Add New Storage Zone</h3>
+        <form th:action="@{/admin/space/add}" th:object="${form}" method="post" style="display: flex; gap: 15px; align-items: flex-end;">
+            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div>
+                <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Zone Name</label>
+                <input type="text" th:field="*{zone}" placeholder="e.g. Zone A" required style="padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+            </div>
+            <div>
+                <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Total Capacity</label>
+                <input type="number" th:field="*{totalCapacity}" min="1" required style="padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+            </div>
+            <button type="submit" style="background: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Initialize Zone</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Storage Utilization</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Zone</th>
+                <th>Capacity</th>
+                <th>Inventory Control</th>
+                <th>Utilization</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${spaces}">
+                <td>
+                    <span th:text="${s.zone}" style="font-weight: bold; font-size: 16px;"></span><br>
+                    <small th:text="${s.availableCapacity + ' units free'}"
+                           th:style="${s.availableCapacity == 0} ? 'color:red' : 'color:gray'"></small>
+                </td>
+
+                <td>
+                    <span th:text="${s.usedCapacity + ' / ' + s.totalCapacity}"></span>
+                </td>
+
+                <td>
+                    <div class="allocation-box">
+                        <form th:action="@{/admin/space/allocate/{id}(id=${s.spaceId})}" method="post" style="display: flex; gap: 5px;">
+                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="number" name="amount" value="1" min="1" class="qty-input">
+                            <button type="submit" class="btn-action btn-allocate" title="Add Items">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </form>
+
+                        <form th:action="@{/admin/space/free/{id}(id=${s.spaceId})}" method="post">
+                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="hidden" name="amount" value="1">
+                            <button type="submit" class="btn-action btn-free" title="Remove 1 Item">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+
+                <td style="width: 200px;">
+                    <div th:with="percent=${(s.usedCapacity * 100.0) / s.totalCapacity}">
+                        <div class="progress-container">
+                            <div class="progress-bar"
+                                 th:style="'width: ' + ${percent} + '%; background-color: ' + (${percent} > 90 ? 'var(--danger)' : (${percent} > 70 ? 'var(--warning)' : 'var(--success)'))">
+                            </div>
+                        </div>
+                        <small th:text="${#numbers.formatDecimal(percent, 1, 1) + '%'}"></small>
+                    </div>
+                </td>
+
+                <td>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <a th:href="@{/admin/space/edit/{id}(id=${s.spaceId})}" class="btn-edit" title="Edit Zone">
+                            <i class="fas fa-edit"></i>
+                        </a>
+
+                        <form th:action="@{/admin/space/delete/{id}(id=${s.spaceId})}" method="post" onsubmit="return confirm('Delete this zone?')">
+                            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 18px; padding: 0;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(spaces)}">
+                <td colspan="5" style="text-align: center; color: #888; padding: 30px;">No storage zones found.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

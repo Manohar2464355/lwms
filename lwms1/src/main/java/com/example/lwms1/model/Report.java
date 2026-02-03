@@ -2,6 +2,7 @@ package com.example.lwms1.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 @Table(name = "reports")
@@ -10,7 +11,7 @@ public class Report {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer reportId;
 
-    private String reportType;
+    private String reportType; // e.g., "INVENTORY", "SHIPMENT", "SPACE", "MAINTENANCE"
     private LocalDateTime generatedOn;
 
     @Column(columnDefinition = "TEXT")
@@ -18,7 +19,11 @@ public class Report {
 
     public Report() {}
 
-    // Standard Getters/Setters
+    public String getFormattedDate() {
+        return generatedOn != null ? generatedOn.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "";
+    }
+
+    // Getters and Setters
     public Integer getReportId() { return reportId; }
     public void setReportId(Integer reportId) { this.reportId = reportId; }
     public String getReportType() { return reportType; }

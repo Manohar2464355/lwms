@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Logistics & Shipments - LWMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin/shipment-list.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Pro</h2>
+    <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-home"></i> Dashboard</a>
+    <a th:href="@{/user/home}" sec:authorize="hasRole('USER')"><i class="fas fa-home"></i> Home</a>
+    <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
+    <a th:href="@{/admin/shipments}"><i class="fas fa-truck"></i> Shipments</a>
+    <a th:href="@{/admin/space}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-warehouse"></i> Space</a>
+    <a th:href="@{/admin/maintenance}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-users"></i> User Management</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-chart-line"></i> Reports</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Logistics & Shipments</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" style="background:none; border:1px solid #ccc; padding:5px 10px; cursor:pointer; border-radius:5px;">Logout</button>
+        </form>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success">
+        <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+    </div>
+
+    <div class="card" sec:authorize="hasRole('ADMIN')">
+        <h3><i class="fas fa-plus-circle"></i> Record New Shipment</h3>
+        <form th:action="@{/admin/shipments/receive}" th:object="${form}" method="post" class="form-grid">
+            <div class="form-group">
+                <label>Item (Available Stock)</label>
+                <select th:field="*{itemId}">
+                    <option value="">-- Choose Item --</option>
+                    <option th:each="i : ${items}" th:value="${i.itemId}" th:text="${i.itemName}"></option>
+                </select>
+                <small class="error-msg" th:if="${#fields.hasErrors('itemId')}" th:errors="*{itemId}"></small>
+            </div>
+
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" th:field="*{quantity}">
+                <small class="error-msg" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></small>
+            </div>
+
+            <div class="form-group">
+                <label>Origin</label>
+                <input type="text" th:field="*{origin}">
+                <small class="error-msg" th:if="${#fields.hasErrors('origin')}" th:errors="*{origin}"></small>
+            </div>
+
+            <div class="form-group">
+                <label>Destination</label>
+                <input type="text" th:field="*{destination}">
+                <small class="error-msg" th:if="${#fields.hasErrors('destination')}" th:errors="*{destination}"></small>
+            </div>
+
+            <div class="form-group">
+                <label>Delivery Date</label>
+                <input type="date" th:field="*{expectedDeliveryDate}">
+                <small class="error-msg" th:if="${#fields.hasErrors('expectedDeliveryDate')}" th:errors="*{expectedDeliveryDate}"></small>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <select th:field="*{status}">
+                    <option value="PENDING">Pending</option>
+                    <option value="IN_TRANSIT">In Transit</option>
+                    <option value="DELIVERED">Delivered</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-receive">Dispatch Now</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Active Logistics Tracking</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Shipment ID</th>
+                <th>Item Name</th>
+                <th>Qty Shipped</th>
+                <th>Destination</th>
+                <th>ETA Date</th>
+                <th>Status</th>
+                <th style="text-align: center;">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${shipments}">
+                <td th:text="${'#SH-' + s.shipmentId}"></td>
+                <td th:text="${s.inventory != null ? s.inventory.itemName : 'N/A'}"></td>
+                <td th:text="${s.quantity}"></td>
+                <td th:text="${s.destination}"></td>
+                <td th:text="${s.expectedDeliveryDate}"></td>
+                <td>
+                    <span th:class="'badge ' + (${s.status == 'DELIVERED'} ? 'status-delivered' : 'status-transit')" th:text="${s.status}"></span>
+                </td>
+                <td style="text-align: center;">
+                    <a th:href="@{/admin/shipments/track/{id}(id=${s.shipmentId})}"><i class="fas fa-eye"></i></a>
+                    <a th:href="@{/admin/shipments/edit/{id}(id=${s.shipmentId})}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-edit"></i></a>
+                    <form th:action="@{/admin/shipments/delete/{id}(id=${s.shipmentId})}" method="post" style="display:inline;" sec:authorize="hasRole('ADMIN')">
+                        <button type="submit" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i class="fas fa-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Track Shipment - LWMS Staff</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/track.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}" class="active-link"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="card">
+        <div class="track-header">
+            <h3>Shipment Tracking: #<span th:text="${shipment.shipmentId}"></span></h3>
+            <span class="badge" th:text="${shipment.status}"
+                  th:style="'background: #e8f5e9; color: #2e7d32; padding: 5px 15px; border-radius: 20px; font-weight: bold;'">
+            </span>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-line"></div>
+            <div class="progress-fill"
+                 th:classappend="${shipment.status == 'PENDING' ? 'fill-pending' : (shipment.status == 'IN_TRANSIT' ? 'fill-transit' : 'fill-delivered')}">
+            </div>
+
+            <div class="step active">
+                <div class="circle"><i class="fas fa-clipboard-list"></i></div>
+                <div class="step-text">Registered</div>
+            </div>
+
+            <div class="step" th:classappend="${shipment.status == 'IN_TRANSIT' or shipment.status == 'DELIVERED' ? 'active' : ''}">
+                <div class="circle"><i class="fas fa-truck"></i></div>
+                <div class="step-text">In Transit</div>
+            </div>
+
+            <div class="step" th:classappend="${shipment.status == 'DELIVERED' ? 'active' : ''}">
+                <div class="circle"><i class="fas fa-check-circle"></i></div>
+                <div class="step-text">Delivered</div>
+            </div>
+        </div>
+
+        <div class="details-grid">
+            <div class="detail-item">
+                <label>Item Description</label>
+                <span th:text="${shipment.inventory != null ? shipment.inventory.itemName : 'Unknown'}"></span>
+            </div>
+            <div class="detail-item">
+                <label>Expected Delivery</label>
+                <span th:text="${shipment.expectedDeliveryDate}"></span>
+            </div>
+            <div class="detail-item">
+                <label>Origin</label>
+                <span th:text="${shipment.origin}"></span>
+            </div>
+            <div class="detail-item">
+                <label>Destination</label>
+                <span th:text="${shipment.destination}"></span>
+            </div>
+        </div>
+
+        <a th:href="@{/user/shipments}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Shipment Log
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

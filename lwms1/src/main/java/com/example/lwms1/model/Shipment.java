@@ -20,6 +20,7 @@ public class Shipment {
     private String origin;
     private String destination;
     private String status;
+    private Integer quantity;
 
     @Column(name = "expected_delivery_date")
     private LocalDate expectedDeliveryDate;
@@ -40,4 +41,6 @@ public class Shipment {
     public void setStatus(String status) { this.status = status; }
     public LocalDate getExpectedDeliveryDate() { return expectedDeliveryDate; }
     public void setExpectedDeliveryDate(LocalDate expectedDeliveryDate) { this.expectedDeliveryDate = expectedDeliveryDate; }
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
 }

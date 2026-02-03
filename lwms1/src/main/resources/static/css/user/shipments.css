@@ -1,0 +1,128 @@
+:root {
+    --sidebar-width: 250px;
+    --primary-bg: #f4f7f6;
+    --accent-color: #2ecc71;
+    --dark-navy: #2c3e50;
+    --danger: #e74c3c;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background-color: var(--primary-bg);
+    display: flex;
+}
+
+/* Sidebar Layout */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--dark-navy);
+    color: white;
+    position: fixed;
+    padding-top: 20px;
+}
+
+.sidebar h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    color: var(--accent-color);
+}
+
+.sidebar a {
+    display: block;
+    padding: 15px 25px;
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    background: #34495e;
+    border-left: 4px solid var(--accent-color);
+}
+
+.active-link {
+    background: #34495e;
+    border-left: 4px solid var(--accent-color);
+}
+
+/* Main Content Area */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 30px;
+    width: calc(100% - var(--sidebar-width));
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* Table Design */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    background: #f8f9fa;
+    padding: 15px;
+    color: #555;
+    border-bottom: 2px solid #eee;
+}
+
+td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+}
+
+/* Logistics Status Badges */
+.badge {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.bg-transit { background: #e1f5fe; color: #0288d1; }
+.bg-delivered { background: #e8f5e9; color: #2e7d32; }
+.bg-pending { background: #fff3e0; color: #ef6c00; }
+
+/* Action Button */
+.btn-track {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: 0.2s;
+    border: 1px solid transparent;
+}
+
+.btn-track:hover {
+    background: #f0fdf4;
+    border-color: var(--accent-color);
+}
+
+.logout-btn {
+    background: var(--danger);
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}

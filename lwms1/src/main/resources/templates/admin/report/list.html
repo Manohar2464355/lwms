@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Reports Archive - LWMS Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin/reports.css}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Pro</h2>
+    <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-home"></i> Dashboard</a>
+    <a th:href="@{/user/home}" sec:authorize="hasRole('USER')"><i class="fas fa-home"></i> Home</a>
+    <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
+    <a th:href="@{/admin/shipments}"><i class="fas fa-truck"></i> Shipments</a>
+    <a th:href="@{/admin/space}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-warehouse"></i> Space</a>
+    <a th:href="@{/admin/maintenance}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-users"></i> User Management</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-chart-line"></i> Reports</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Reports Archive</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div class="card" sec:authorize="hasRole('ADMIN')">
+        <h3 style="margin-top:0"><i class="fas fa-file-signature"></i> Create New Archive Report</h3>
+        <form th:action="@{/admin/reports/generate}" th:object="${form}" method="post" style="display:flex; gap:20px; align-items:flex-end;">
+            <div style="flex:1">
+                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px;">Report Category</label>
+                <select th:field="*{reportType}" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ddd;">
+                    <option value="INVENTORY">Inventory Levels</option>
+                    <option value="SHIPMENT">Shipment Logs</option>
+                    <option value="SPACE">Warehouse Capacity</option>
+                    <option value="MAINTENANCE">Maintenance Logs</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px;">Internal Notes</label>
+                <input type="text" th:field="*{customNotes}" placeholder="e.g., Q1 Audit" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ddd;">
+            </div>
+            <button type="submit" class="btn-generate">Generate PDF Archive</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Generated Document History</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Type</th>
+                <th>Generated On</th>
+                <th>Data Snapshot</th>
+                <th style="text-align: center;">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${reports}" th:id="'row-' + ${r.reportId}">
+                <td th:text="${'#RPT-' + r.reportId}" style="font-weight:bold; color:#777;"></td>
+                <td><span class="badge-type" th:text="${r.reportType}"></span></td>
+                <td th:text="${#temporals.format(r.generatedOn, 'yyyy-MM-dd HH:mm')}"></td>
+                <td><div class="report-details-cell" th:text="${r.details}"></div></td>
+                <td style="text-align: center;">
+                    <div style="display: flex; gap: 20px; justify-content: center; align-items: center;">
+                        <button type="button" class="action-icon" style="color:var(--info);"
+                                th:onclick="'downloadPDF(' + ${r.reportId} + ')'" title="Download PDF">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+
+                        <form th:action="@{/admin/reports/delete/{id}(id=${r.reportId})}" method="post"
+                              onsubmit="return confirm('Delete this report record?')">
+                            <button type="submit" class="action-icon" style="color:var(--danger);">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(reports)}">
+                <td colspan="5" style="text-align: center; padding: 40px; color: #999;">No archives found.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function downloadPDF(reportId) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const row = document.getElementById('row-' + reportId);
+
+        const type = row.cells[1].innerText;
+        const date = row.cells[2].innerText;
+        const details = row.cells[3].innerText;
+
+        doc.setFillColor(44, 62, 80);
+        doc.rect(0, 0, 210, 30, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.text("LWMS PRO - LOGISTICS REPORT", 15, 20);
+
+        doc.setTextColor(40);
+        doc.setFontSize(10);
+        doc.text("Category: " + type, 15, 40);
+        doc.text("Generated: " + date, 15, 47);
+        doc.line(15, 52, 195, 52);
+
+        doc.setFont("courier", "normal");
+        doc.setFontSize(9);
+        const splitText = doc.splitTextToSize(details, 180);
+        doc.text(splitText, 15, 65);
+
+        doc.save(type + "_Report_" + reportId + ".pdf");
+    }
+</script>
+
+</body>
+</html>

@@ -3,16 +3,13 @@ package com.example.lwms1.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public class ReportDTO {
-    private Integer reportId;
-    @NotBlank(message = "Required")
+    @NotBlank(message = "Please select a report type")
     private String reportType;
-    private String details;
+    private String customNotes; // Optional notes to add to the auto-generated report
 
     public ReportDTO() {}
-    public Integer getReportId() { return reportId; }
-    public void setReportId(Integer reportId) { this.reportId = reportId; }
     public String getReportType() { return reportType; }
     public void setReportType(String reportType) { this.reportType = reportType; }
-    public String getDetails() { return details; }
-    public void setDetails(String details) { this.details = details; }
+    public String getCustomNotes() { return customNotes; }
+    public void setCustomNotes(String customNotes) { this.customNotes = customNotes; }
 }

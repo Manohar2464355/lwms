@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventory Management - LWMS Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin/inventory.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Pro</h2>
+    <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-home"></i> Dashboard</a>
+    <a th:href="@{/user/home}" sec:authorize="hasRole('USER')"><i class="fas fa-home"></i> Home</a>
+    <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
+    <a th:href="@{/admin/shipments}"><i class="fas fa-truck"></i> Shipments</a>
+    <a th:href="@{/admin/space}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-warehouse"></i> Space</a>
+    <a th:href="@{/admin/maintenance}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-users"></i> User Management</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-chart-line"></i> Reports</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Inventory Stock</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+    <div class="card" sec:authorize="hasRole('ADMIN')">
+        <h3><i class="fas fa-plus-circle"></i> Register New Item</h3>
+        <form th:action="@{/inventory/add}" th:object="${inventoryDTO}" method="post" class="form-grid">
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" th:field="*{itemName}" required>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <input type="text" th:field="*{category}">
+            </div>
+            <div class="form-group">
+                <label>Storage Zone</label>
+                <select th:field="*{location}" required>
+                    <option value="">Select Zone</option>
+                    <option th:each="s : ${spaces}" th:value="${s.zone}" th:text="${s.zone + ' (' + s.availableCapacity + ' left)'}"></option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" th:field="*{quantity}" required min="0">
+            </div>
+            <button type="submit" class="btn-submit">Add Item</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th><th>Name</th><th>Category</th><th>Qty</th><th>Zone</th><th>Status</th><th sec:authorize="hasRole('ADMIN')">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${items}">
+                <td th:text="${item.itemId}"></td>
+                <td th:text="${item.itemName}" style="font-weight:600;"></td>
+                <td th:text="${item.category}"></td>
+                <td th:text="${item.quantity}"></td>
+                <td>
+                    <i class="fas fa-map-marker-alt" style="color:var(--accent-color)"></i>
+                    <span th:text="${item.location}"></span>
+                </td>
+                <td>
+                    <span th:if="${item.quantity <= 5}" class="badge badge-low">Low Stock</span>
+                    <span th:if="${item.quantity > 5}" class="badge badge-ok">In Stock</span>
+                </td>
+                <td sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/inventory/edit/{id}(id=${item.itemId})}" style="color: var(--accent-color); margin-right: 15px;"><i class="fas fa-edit"></i></a>
+                    <a th:href="@{/inventory/delete/{id}(id=${item.itemId})}" style="color: var(--danger)" onclick="return confirm('Delete this item?')"><i class="fas fa-trash"></i></a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
