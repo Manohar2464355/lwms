@@ -2,9 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Login - LWMS</title>
+    <title>Register - LWMS</title>
     <style>
-        /* Inbuilt CSS for immediate testing */
         body {
             background: linear-gradient(135deg, #2c3e50, #4ca1af);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -21,7 +20,7 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             width: 100%;
-            max-width: 380px;
+            max-width: 400px;
         }
 
         .auth-card h2 {
@@ -32,7 +31,8 @@
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            position: relative;
         }
 
         .form-group label {
@@ -49,12 +49,26 @@
             border: 1px solid #ddd;
             border-radius: 6px;
             box-sizing: border-box;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .form-group input:focus {
             border-color: #4ca1af;
             outline: none;
+            box-shadow: 0 0 5px rgba(76, 161, 175, 0.3);
+        }
+
+        /* Error States */
+        .is-invalid {
+            border-color: #e74c3c !important;
+            background-color: #fdf2f2;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
         }
 
         .btn-primary {
@@ -67,6 +81,7 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
+            margin-top: 10px;
             transition: background 0.3s;
         }
 
@@ -74,17 +89,16 @@
             background: #1a252f;
         }
 
-        /* Alerts */
-        .alert {
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
             padding: 12px;
             border-radius: 6px;
+            border: 1px solid #f5c6cb;
             margin-bottom: 20px;
             font-size: 14px;
             text-align: center;
         }
-
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
         .footer-text {
             text-align: center;
@@ -98,35 +112,52 @@
             text-decoration: none;
             font-weight: 600;
         }
+
+        .footer-text a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
+
 <div class="auth-card">
-    <h2>LWMS Login</h2>
+    <h2>Join LWMS</h2>
 
-    <div th:if="${param.success}" class="alert alert-success">
-        Registration successful! Please login.
-    </div>
+    <div th:if="${registrationError}" class="alert-error" th:text="${registrationError}"></div>
 
-    <div th:if="${param.error}" class="alert alert-error">
-        Invalid username or password.
-    </div>
+    <form th:action="@{/register}" th:object="${userDto}" method="post">
 
-    <form th:action="@{/login}" method="post">
         <div class="form-group">
-            <label>Username</label>
-            <input type="text" name="username" required autofocus>
+            <label for="username">Username</label>
+            <input type="text" id="username" th:field="*{username}"
+                   th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''"
+                   placeholder="Enter your username" required autofocus>
+            <span class="error-message" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></span>
         </div>
+
         <div class="form-group">
-            <label>Password</label>
-            <input type="password" name="password" required>
+            <label for="email">Email Address</label>
+            <input type="email" id="email" th:field="*{email}"
+                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                   placeholder="name@example.com" required>
+            <span class="error-message" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
         </div>
-        <button type="submit" class="btn-primary">Sign In</button>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" th:field="*{password}"
+                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                   placeholder="Min. 8 characters" required>
+            <span class="error-message" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+        </div>
+
+        <button type="submit" class="btn-primary">Create Account</button>
     </form>
 
     <div class="footer-text">
-        New here? <a th:href="@{/register}">Create an account</a>
+        Already have an account? <a th:href="@{/login}">Sign In</a>
     </div>
 </div>
+
 </body>
 </html>

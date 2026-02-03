@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Staff Portal - LWMS Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/dashboard.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}" class="active-link"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div>
+            <h1>Staff Dashboard</h1>
+            <p>Operational overview for <strong th:text="${username}">User</strong></p>
+        </div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </form>
+    </div>
+
+    <div class="stats-grid">
+        <a th:href="@{/user/inventory}" class="stat-card">
+            <i class="fas fa-box-open"></i>
+            <div class="value" th:text="${inventoryCount}">0</div>
+            <div class="label">Total Stock Items</div>
+        </a>
+
+        <a th:href="@{/user/shipments}" class="stat-card">
+            <i class="fas fa-truck-loading"></i>
+            <div class="value" th:text="${activeShipmentsCount}">0</div>
+            <div class="label">Expected Shipments</div>
+        </a>
+
+        <a th:href="@{/user/maintenance}" class="stat-card">
+            <i class="fas fa-tools"></i>
+            <div class="value" th:text="${pendingMaintenanceCount}">0</div>
+            <div class="label">Pending Repairs</div>
+        </a>
+
+        <a th:href="@{/user/reports}" class="stat-card">
+            <i class="fas fa-file-alt"></i>
+            <div class="value" th:text="${reportCount}">0</div>
+            <div class="label">System Reports</div>
+        </a>
+
+        <a th:href="@{/user/space}" class="stat-card">
+            <i class="fas fa-map-marker-alt" style="color: #9b59b6;"></i>
+            <div class="value" th:text="${warehouseUtilization}">0%</div>
+            <div class="label">Space Occupancy</div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

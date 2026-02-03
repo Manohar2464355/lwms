@@ -1,14 +1,17 @@
 
 package com.example.lwms1.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 public class UserCreateDTO {
     @NotBlank @Size(min = 3, max = 60)
     private String username;
 
-    @NotBlank
-    @jakarta.validation.constraints.Email // Validates gmail/email format
+    @NotBlank(message = "Email is required")
+    @Email(message = "Please provide a valid email structure")
+    @Pattern(regexp = "^[A-Za-z0-9+_.-]+@(.+)\\.(.+)$", message = "Email must contain a valid domain (e.g., .com, .org)")
     private String email;
 
     @NotBlank @Size(min = 6, max = 72)

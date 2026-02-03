@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventory View - LWMS Staff</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/inventory.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}" class="active-link"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Current Stock Levels</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Quantity</th>
+                <th>Location</th>
+                <th>Stock Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${items}">
+                <td th:text="${item.itemId}"></td>
+                <td th:text="${item.itemName}" style="font-weight: 600;"></td>
+                <td th:text="${item.category}"></td>
+                <td th:text="${item.quantity}"></td>
+                <td>
+                    <span class="location-tag">
+                        <i class="fas fa-map-marker-alt"></i> [[${item.location}]]
+                    </span>
+                </td>
+                <td>
+                    <span th:if="${item.quantity > 10}" class="status-pill high">Optimal</span>
+                    <span th:if="${item.quantity <= 10 and item.quantity > 0}" class="status-pill low">Low Stock</span>
+                    <span th:if="${item.quantity <= 0}" class="status-pill empty">Out of Stock</span>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(items)}">
+                <td colspan="6" style="text-align: center; padding: 50px; color: #888;">
+                    No inventory items found.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

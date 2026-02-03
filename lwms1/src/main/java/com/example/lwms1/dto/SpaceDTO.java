@@ -10,6 +10,8 @@ public class SpaceDTO {
     @NotNull @Positive
     private Integer totalCapacity;
 
+    // Add this to SpaceDTO
+    @PositiveOrZero(message = "Used capacity cannot be negative")
     private Integer usedCapacity;
 
     @NotBlank @Size(max = 50)

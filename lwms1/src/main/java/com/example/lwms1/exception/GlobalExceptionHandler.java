@@ -1,6 +1,7 @@
 
 package com.example.lwms1.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.ui.Model;
@@ -8,37 +9,43 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public String handleNotFound(ResourceNotFoundException ex, Model model) {
-        model.addAttribute("message", ex.getMessage());
-        return "error/404";
+    @ExceptionHandler(BusinessException.class)
+    public String handleBusiness(BusinessException ex, RedirectAttributes ra, HttpServletRequest request) {
+        ra.addFlashAttribute("errorMessage", ex.getMessage());
+        String referer = request.getHeader("Referer");
+        return "redirect:" + (referer != null ? referer : "/");
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class, BusinessException.class})
-    public String handleValidation(Exception ex, Model model) {
-        model.addAttribute("message", "Validation/Business error: " + ex.getMessage());
-        return "error/400";
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public String handleNotFound(ResourceNotFoundException ex, RedirectAttributes ra) {
+        ra.addFlashAttribute("errorMessage", "Resource not found: " + ex.getMessage());
+        return "redirect:/";
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public String handleDataIntegrity(DataIntegrityViolationException ex, Model model) {
-        model.addAttribute("message", "Data integrity violation: " + ex.getMostSpecificCause().getMessage());
-        return "error/409";
+    public String handleDataIntegrity(DataIntegrityViolationException ex, RedirectAttributes ra, HttpServletRequest request) {
+        ra.addFlashAttribute("errorMessage", "Database Error: This record is currently in use and cannot be modified.");
+        String referer = request.getHeader("Referer");
+        return "redirect:" + (referer != null ? referer : "/");
     }
 
+    // Safety Net 1: Handles Security/Permission issues
     @ExceptionHandler(AccessDeniedException.class)
-    public String handleAccessDenied(AccessDeniedException ex, Model model) {
-        model.addAttribute("message", "Access denied.");
-        return "error/403";
+    public String handleAccessDenied(RedirectAttributes ra) {
+        ra.addFlashAttribute("errorMessage", "Access Denied: You do not have permission for this action.");
+        return "redirect:/"; // Usually sends them to their respective home/dashboard
     }
 
+    // Safety Net 2: Catch-all for unexpected crashes
     @ExceptionHandler(Exception.class)
-    public String handleGeneric(Exception ex, Model model) {
-        model.addAttribute("message", "Unexpected error: " + ex.getMessage());
-        return "error/500";
+    public String handleGeneral(Exception ex, RedirectAttributes ra) {
+        // Log the error here for the developer!
+        ra.addFlashAttribute("errorMessage", "An unexpected system error occurred.");
+        return "redirect:/";
     }
 }

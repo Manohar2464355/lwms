@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Maintenance Log - LWMS Staff</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/maintenance.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}" class="active-link"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Maintenance Schedule</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0">
+            <i class="fas fa-clipboard-list" style="color: var(--warning-amber);"></i>
+            Equipment & Zone Tasks
+        </h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Schedule ID</th>
+                <th>Target (Zone/Equip)</th>
+                <th>Task Description</th>
+                <th>Scheduled Date</th>
+                <th>Current Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${schedules}">
+                <td th:text="'#' + ${m.scheduleId}"></td>
+                <td>
+                    <i class="fas fa-map-marker-alt" style="color: #95a5a6;"></i>
+                    <span th:text="${m.equipmentId}" style="font-weight: 600;"></span>
+                </td>
+                <td th:text="${m.description}"></td>
+                <td th:text="${m.scheduledDate}"></td>
+                <td>
+                    <span th:class="'status-badge ' + (${m.completionStatus == 'COMPLETED'} ? 'status-completed' : 'status-pending')"
+                          th:text="${m.completionStatus}"></span>
+                </td>
+            </tr>
+
+            <tr th:if="${#lists.isEmpty(schedules)}">
+                <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; display: block; margin-bottom: 10px; color: #d4edda;"></i>
+                    All systems clear. No maintenance tasks scheduled.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

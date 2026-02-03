@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Maintenance - LWMS Pro</title>
+    <link rel="stylesheet" th:href="@{/css/admin/maintenance.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Pro</h2>
+    <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-home"></i> Dashboard</a>
+    <a th:href="@{/user/home}" sec:authorize="hasRole('USER')"><i class="fas fa-home"></i> Home</a>
+    <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
+    <a th:href="@{/admin/shipments}"><i class="fas fa-truck"></i> Shipments</a>
+    <a th:href="@{/admin/space}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-warehouse"></i> Space</a>
+    <a th:href="@{/admin/maintenance}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-users"></i> User Management</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-chart-line"></i> Reports</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Maintenance Scheduling</h1>
+        <form th:action="@{/logout}" method="post">
+            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div th:if="${successMessage}" style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #c3e6cb;">
+        <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+    </div>
+
+    <div class="card" sec:authorize="hasRole('ADMIN')">
+        <h3 style="margin-top:0"><i class="fas fa-calendar-plus" style="color: var(--accent-color);"></i> Schedule New Task</h3>
+        <form th:action="@{/admin/maintenance/schedule}" th:object="${form}" method="post" class="form-grid">
+            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <div class="form-group">
+                <label>Target Storage Zone</label>
+                <select th:field="*{equipmentId}" required>
+                    <option value="">-- Select Location --</option>
+                    <option th:each="space : ${availableSpaces}"
+                            th:value="${space.spaceId}"
+                            th:text="${space.zone + ' (' + space.usedCapacity + ' items stored)'}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Maintenance Description</label>
+                <input type="text" th:field="*{description}" placeholder="e.g. Rack Inspection" required>
+            </div>
+
+            <div class="form-group">
+                <label>Scheduled Date</label>
+                <input type="date" th:field="*{scheduledDate}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Initial Status</label>
+                <select th:field="*{completionStatus}">
+                    <option value="PENDING">Pending (LOCKED)</option>
+                    <option value="COMPLETED">Completed (UNLOCKED)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn-submit">Schedule Task</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0">Active Maintenance Log</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Location Details</th>
+                <th>Task Description</th>
+                <th>Scheduled Date</th>
+                <th>Status</th>
+                <th style="text-align: center;">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${schedules}">
+                <td>
+                    <div style="font-weight: bold; color: var(--dark-navy);">
+                        <i class="fas fa-map-marker-alt" style="color: var(--accent-color);"></i> Zone ID: <span th:text="${m.equipmentId}"></span>
+                    </div>
+                </td>
+                <td th:text="${m.description}"></td>
+                <td th:text="${m.scheduledDate}"></td>
+                <td>
+                    <span th:class="'status-badge ' + (${m.completionStatus == 'COMPLETED'} ? 'status-completed' : 'status-pending')"
+                          th:text="${m.completionStatus}"></span>
+                </td>
+                <td class="action-group">
+                    <form th:action="@{/admin/maintenance/toggle/{id}(id=${m.scheduleId})}" method="post" style="display:inline;">
+                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit"
+                                th:class="'btn-toggle ' + (${m.completionStatus == 'PENDING'} ? 'btn-unlock' : 'btn-lock')"
+                                th:title="${m.completionStatus == 'PENDING' ? 'Mark as Completed' : 'Re-open Task'}">
+                            <i class="fas" th:classappend="${m.completionStatus == 'PENDING'} ? 'fa-check-circle' : 'fa-undo'"></i>
+                            <span th:text="${m.completionStatus == 'PENDING'} ? 'Resolve' : 'Re-lock'"></span>
+                        </button>
+                    </form>
+
+                    <form th:action="@{/admin/maintenance/delete/{id}(id=${m.scheduleId})}" method="post" style="display:inline;">
+                        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" style="color: var(--danger); background:none; border:none; cursor:pointer; font-size: 1.1rem;"
+                                onclick="return confirm('Permanently delete this maintenance record?')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(schedules)}">
+                <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-tools" style="font-size: 2rem; display: block; margin-bottom: 10px; color: #ddd;"></i>
+                    No maintenance tasks scheduled.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

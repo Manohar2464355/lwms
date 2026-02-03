@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Zone Capacity - LWMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user/space.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Staff</h2>
+    <a th:href="@{/user/home}"><i class="fas fa-home"></i> My Portal</a>
+    <a th:href="@{/user/inventory}"><i class="fas fa-boxes"></i> Inventory View</a>
+    <a th:href="@{/user/shipments}"><i class="fas fa-truck"></i> Shipments Log</a>
+    <a th:href="@{/user/space}" class="active-link"><i class="fas fa-warehouse"></i> Zone Capacity</a>
+    <a th:href="@{/user/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/user/reports}"><i class="fas fa-file-alt"></i> Reports Archive</a>
+    <a th:href="@{/user/profile}"><i class="fas fa-user-circle"></i> My Account</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div>
+            <h1>Storage Availability</h1>
+            <p>Live monitoring of warehouse zone utilization.</p>
+        </div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+
+    <div class="space-grid">
+        <div th:each="s : ${spaces}" class="card">
+            <div class="zone-header">
+                <span class="zone-name"><i class="fas fa-th"></i> [[${s.zone}]]</span>
+                <span style="font-size: 0.8rem; color: #888;">ID: #[[${s.spaceId}]]</span>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar"
+                     th:with="percent=${s.totalCapacity > 0 ? (s.usedCapacity * 100 / s.totalCapacity) : 0}"
+                     th:style="'width: ' + ${percent} + '%; ' +
+                               'background-color: ' + (${percent > 90} ? '#e74c3c' : '#2ecc71')">
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <span>Used: <span class="stat-value" th:text="${s.usedCapacity}">0</span></span>
+                <span>Total: <span class="stat-value" th:text="${s.totalCapacity}">100</span></span>
+            </div>
+
+            <div class="stat-row available-row">
+                <span>Available:</span>
+                <span class="stat-value" style="color: #2980b9;" th:text="${s.availableCapacity}">100</span>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(spaces)}" style="grid-column: 1/-1; text-align: center; padding: 50px;">
+            <i class="fas fa-folder-open" style="font-size: 3rem; color: #ccc; margin-bottom: 10px;"></i>
+            <p style="color: #999;">No storage zones defined in the system.</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

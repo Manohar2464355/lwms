@@ -14,6 +14,7 @@ public class MaintenanceDTO {
     private String description;
 
     @NotNull
+    @FutureOrPresent(message = "Maintenance must be scheduled for today or a future date")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate scheduledDate;
 

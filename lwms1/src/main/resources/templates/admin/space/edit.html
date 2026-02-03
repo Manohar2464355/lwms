@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Zone - LWMS</title>
+    <link rel="stylesheet" th:href="@{/css/admin/space.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body style="display: block;">
+<div class="main-content" style="margin: 0 auto; max-width: 500px;">
+    <div class="header">
+        <h1><i class="fas fa-edit"></i> Edit Storage Zone</h1>
+    </div>
+    <div class="card">
+        <form th:action="@{/admin/space/update/{id}(id=${spaceId})}" th:object="${form}" method="post">
+            <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div style="margin-bottom: 15px;">
+                <label style="display:block; font-weight:bold; margin-bottom:5px;">Zone Name</label>
+                <input type="text" th:field="*{zone}" required style="width:100%; padding:8px; border:1px solid #ddd;">
+                <p th:if="${#fields.hasErrors('zone')}" th:errors="*{zone}" style="color:red; font-size:12px;"></p>
+            </div>
+            <div style="margin-bottom: 25px;">
+                <label style="display:block; font-weight:bold; margin-bottom:5px;">Total Capacity</label>
+                <input type="number" th:field="*{totalCapacity}" min="1" required style="width:100%; padding:8px; border:1px solid #ddd;">
+                <p th:if="${#fields.hasErrors('totalCapacity')}" th:errors="*{totalCapacity}" style="color:red; font-size:12px;"></p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-save">Save Changes</button>
+                <a th:href="@{/admin/space}" class="btn-cancel" style="text-decoration:none; text-align:center; flex-grow:1; line-height:35px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

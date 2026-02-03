@@ -8,22 +8,25 @@ import com.example.lwms1.model.Role;
 import com.example.lwms1.model.UserAccount;
 import com.example.lwms1.repository.RoleRepository;
 import com.example.lwms1.repository.UserAccountRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
 @Transactional
 public class UserService {
 
-    // These must be declared here for the methods below to "see" them
     private final UserAccountRepository userRepo;
     private final RoleRepository roleRepo;
     private final PasswordEncoder encoder;
 
+    @Autowired
     public UserService(UserAccountRepository userRepo, RoleRepository roleRepo, PasswordEncoder encoder) {
         this.userRepo = userRepo;
         this.roleRepo = roleRepo;
@@ -35,58 +38,91 @@ public class UserService {
     }
 
     public UserAccount createUser(UserCreateDTO dto) {
-        if (userRepo.findByUsername(dto.getUsername()).isPresent()) {
+        // 1. Check if user already exists
+        Optional<UserAccount> existing = userRepo.findByUsername(dto.getUsername());
+        if (existing.isPresent()) {
             throw new BusinessException("Username already exists: " + dto.getUsername());
         }
+
+        // 2. Map DTO to Entity
         UserAccount u = new UserAccount();
         u.setUsername(dto.getUsername());
         u.setEmail(dto.getEmail());
-        u.setPassword(encoder.encode(dto.getPassword()));
+        u.setPassword(encoder.encode(dto.getPassword())); // Encrypting the password
         u.setEnabled(true);
 
-        String roleName = "ROLE_" + (dto.getRole() == null ? "USER" : dto.getRole().toUpperCase());
-        Role role = roleRepo.findByName(roleName)
-                .orElseGet(() -> roleRepo.save(new Role(roleName)));
-        u.setRoles(Set.of(role));
+        // 3. Handle Role
+        String roleName = formatRole(dto.getRole());
+        Optional<Role> roleOpt = roleRepo.findByName(roleName);
+
+        Role role;
+        if (roleOpt.isPresent()) {
+            role = roleOpt.get();
+        } else {
+            role = roleRepo.save(new Role(roleName));
+        }
+
+        Set<Role> roles = new HashSet<>();
+        roles.add(role);
+        u.setRoles(roles);
 
         return userRepo.save(u);
     }
 
-    public UserAccount setUserRole(UserRoleUpdateDTO dto) {
-        // userRepo is now recognized because it's a class field
-        UserAccount user = userRepo.findByUsername(dto.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + dto.getUsername()));
-
-        String roleName = "ROLE_" + dto.getRole().toUpperCase();
-        Role role = roleRepo.findByName(roleName)
-                .orElseThrow(() -> new BusinessException("Role not found: " + roleName));
-
-        user.setRoles(Set.of(role));
-        return userRepo.save(user);
-    }
-
     public UserAccount grantRole(String username, String roleSimpleName) {
-        UserAccount user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<UserAccount> userOpt = userRepo.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        UserAccount user = userOpt.get();
 
-        String roleName = "ROLE_" + roleSimpleName.toUpperCase();
-        Role role = roleRepo.findByName(roleName)
-                .orElseThrow(() -> new BusinessException("Role not found: " + roleName));
+        String roleName = formatRole(roleSimpleName);
+        Optional<Role> roleOpt = roleRepo.findByName(roleName);
+        if (roleOpt.isEmpty()) {
+            throw new BusinessException("Role not found: " + roleName);
+        }
 
-        user.getRoles().add(role);
+        user.getRoles().add(roleOpt.get());
         return userRepo.save(user);
     }
 
     public UserAccount revokeRole(String username, String roleSimpleName) {
-        UserAccount user = userRepo.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        Optional<UserAccount> userOpt = userRepo.findByUsername(username);
+        if (userOpt.isEmpty()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        UserAccount user = userOpt.get();
 
-        String roleName = "ROLE_" + roleSimpleName.toUpperCase();
-        user.getRoles().removeIf(r -> r.getName().equals(roleName));
+        String roleName = formatRole(roleSimpleName);
+
+        // SIMPLE FOR-LOOP REPLACEMENT FOR removeIf
+        Role roleToRemove = null;
+        for (Role r : user.getRoles()) {
+            if (r.getName().equals(roleName)) {
+                roleToRemove = r;
+                break;
+            }
+        }
+
+        if (roleToRemove != null) {
+            user.getRoles().remove(roleToRemove);
+        }
 
         if (user.getRoles().isEmpty()) {
-            throw new BusinessException("User must have at least one role");
+            throw new BusinessException("User must have at least one role!");
         }
+
         return userRepo.save(user);
+    }
+
+    private String formatRole(String role) {
+        if (role == null || role.isEmpty()) {
+            return "ROLE_USER";
+        }
+        String upperRole = role.toUpperCase();
+        if (upperRole.startsWith("ROLE_")) {
+            return upperRole;
+        }
+        return "ROLE_" + upperRole;
     }
 }

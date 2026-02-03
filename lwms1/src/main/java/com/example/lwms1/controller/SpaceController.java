@@ -1,19 +1,20 @@
-
 package com.example.lwms1.controller;
 
 import com.example.lwms1.dto.SpaceAllocationDTO;
 import com.example.lwms1.dto.SpaceDTO;
+import com.example.lwms1.model.Space;
 import com.example.lwms1.service.SpaceService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/**
- * ADMIN-only Space management under /admin/space.
- */
+import java.util.List;
+
 @Controller
 @RequestMapping("/admin/space")
 @PreAuthorize("hasRole('ADMIN')")
@@ -21,63 +22,92 @@ public class SpaceController {
 
     private final SpaceService service;
 
+    @Autowired
     public SpaceController(SpaceService service) {
         this.service = service;
     }
 
-    @GetMapping("")
+    @GetMapping
     public String usage(Model model) {
-        model.addAttribute("spaces", service.listAll());
+        List<Space> spaces = service.listAll();
+        model.addAttribute("spaces", spaces);
         model.addAttribute("form", new SpaceDTO());
         model.addAttribute("alloc", new SpaceAllocationDTO());
-        return "space/usage";
+        return "admin/space/usage";
     }
 
     @PostMapping("/add")
-    public String add(@ModelAttribute("form") @Valid SpaceDTO dto, BindingResult result, Model model) {
+    public String add(@ModelAttribute("form") @Valid SpaceDTO dto,
+                      BindingResult result, Model model, RedirectAttributes ra) {
         if (result.hasErrors()) {
             model.addAttribute("spaces", service.listAll());
             model.addAttribute("alloc", new SpaceAllocationDTO());
-            return "space/usage";
+            return "admin/space/usage";
         }
-
-        // Instead of just passing the DTO, the service will now handle the initialization
         service.create(dto);
-
+        ra.addFlashAttribute("success", "Zone created successfully!");
         return "redirect:/admin/space";
     }
+
+    @GetMapping("/edit/{id}")
+    public String edit(@PathVariable Integer id, Model model) {
+        Space space = service.getById(id);
+
+        // Manual mapping from Entity to DTO
+        SpaceDTO dto = new SpaceDTO();
+        dto.setZone(space.getZone());
+        dto.setTotalCapacity(space.getTotalCapacity());
+
+        model.addAttribute("form", dto);
+        model.addAttribute("spaceId", id);
+        return "admin/space/edit";
+    }
+
     @PostMapping("/update/{id}")
     public String update(@PathVariable Integer id,
                          @ModelAttribute("form") @Valid SpaceDTO dto,
-                         BindingResult result,
-                         Model model) {
+                         BindingResult result, Model model, RedirectAttributes ra) {
         if (result.hasErrors()) {
-            model.addAttribute("spaces", service.listAll());
-            model.addAttribute("alloc", new SpaceAllocationDTO());
-            return "space/usage";
+            model.addAttribute("spaceId", id);
+            return "admin/space/edit";
         }
         service.update(id, dto);
+        ra.addFlashAttribute("success", "Zone updated successfully!");
         return "redirect:/admin/space";
     }
 
     @PostMapping("/delete/{id}")
-    public String delete(@PathVariable Integer id) {
+    public String delete(@PathVariable Integer id, RedirectAttributes ra) {
         service.delete(id);
+        ra.addFlashAttribute("success", "Space deleted successfully.");
         return "redirect:/admin/space";
     }
 
     @PostMapping("/allocate/{id}")
     public String allocate(@PathVariable Integer id,
-                           @ModelAttribute("alloc") @Valid SpaceAllocationDTO dto) {
+                           @ModelAttribute("alloc") @Valid SpaceAllocationDTO dto,
+                           BindingResult result, Model model, RedirectAttributes ra) {
+        if (result.hasErrors()) {
+            model.addAttribute("spaces", service.listAll());
+            model.addAttribute("form", new SpaceDTO());
+            return "admin/space/usage";
+        }
         service.allocate(id, dto);
+        ra.addFlashAttribute("success", "Capacity allocated.");
         return "redirect:/admin/space";
     }
 
-
     @PostMapping("/free/{id}")
     public String free(@PathVariable Integer id,
-                       @ModelAttribute("alloc") @Valid SpaceAllocationDTO dto) {
+                       @ModelAttribute("alloc") @Valid SpaceAllocationDTO dto,
+                       BindingResult result, Model model, RedirectAttributes ra) {
+        if (result.hasErrors()) {
+            model.addAttribute("spaces", service.listAll());
+            model.addAttribute("form", new SpaceDTO());
+            return "admin/space/usage";
+        }
         service.free(id, dto);
+        ra.addFlashAttribute("success", "Capacity freed.");
         return "redirect:/admin/space";
     }
 }

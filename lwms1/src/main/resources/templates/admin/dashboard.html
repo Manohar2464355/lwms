@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - LWMS Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin/dashboard.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>LWMS Pro</h2>
+    <a th:href="@{/admin/dashboard}" class="active"><i class="fas fa-home"></i> Dashboard</a>
+    <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
+    <a th:href="@{/admin/shipments}"><i class="fas fa-truck"></i> Shipments</a>
+    <a th:href="@{/admin/space}"><i class="fas fa-warehouse"></i> Space</a>
+    <a th:href="@{/admin/maintenance}"><i class="fas fa-tools"></i> Maintenance</a>
+    <a th:href="@{/admin/users}"><i class="fas fa-users"></i> User Management</a>
+    <a th:href="@{/admin/reports}"><i class="fas fa-chart-line"></i> Reports</a>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <h1>Admin Control Center</h1>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </form>
+    </div>
+
+    <div class="stats-grid">
+        <a th:href="@{/inventory}" class="stat-card" style="text-decoration: none;">
+            <i class="fas fa-box"></i>
+            <div class="value" th:text="${inventoryCount}">0</div>
+            <div class="label">Inventory Items</div>
+        </a>
+
+        <a th:href="@{/admin/shipments}" class="stat-card" style="text-decoration: none;">
+            <i class="fas fa-shipping-fast"></i>
+            <div class="value" th:text="${activeShipmentsCount}">0</div>
+            <div class="label">Active Shipments</div>
+        </a>
+
+        <a th:href="@{/admin/space}" class="stat-card" style="text-decoration: none;">
+            <i class="fas fa-warehouse"></i>
+            <div class="value" th:text="${warehouseUtilization}">0%</div>
+            <div class="label">Space Occupancy</div>
+        </a>
+
+        <a th:href="@{/admin/maintenance}" class="stat-card" style="text-decoration: none;">
+            <i class="fas fa-exclamation-triangle"
+               th:classappend="${openMaintenanceTasks > 0} ? 'maintenance-pulse' : ''"></i>
+
+            <div class="value" th:text="${openMaintenanceTasks}">0</div>
+            <div class="label">Pending Maintenance</div>
+        </a>
+
+        <a th:href="@{/admin/reports}" class="stat-card" style="text-decoration: none;">
+            <i class="fas fa-file-invoice"></i>
+            <div class="value" th:text="${reportCount}">0</div>
+            <div class="label">Total Reports</div>
+        </a>
+
+        <a th:href="@{/admin/users}" class="stat-card" style="text-decoration: none;">
+            <i class="fas fa-user-shield"></i>
+            <div class="value" th:text="${userCount}">0</div>
+            <div class="label">System Users</div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,17 +1,16 @@
 package com.example.lwms1.controller;
 
 import com.example.lwms1.dto.MaintenanceDTO;
-import com.example.lwms1.model.MaintenanceSchedule;
-import com.example.lwms1.model.Space;
 import com.example.lwms1.service.MaintenanceService;
 import com.example.lwms1.service.SpaceService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/maintenance")
@@ -21,6 +20,7 @@ public class MaintenanceController {
     private final MaintenanceService service;
     private final SpaceService spaceService;
 
+    @Autowired
     public MaintenanceController(MaintenanceService service, SpaceService spaceService) {
         this.service = service;
         this.spaceService = spaceService;
@@ -31,38 +31,59 @@ public class MaintenanceController {
         model.addAttribute("schedules", service.listAll());
         model.addAttribute("availableSpaces", spaceService.listAll());
         model.addAttribute("form", new MaintenanceDTO());
-        return "maintenance/schedule";
+        return "admin/maintenance/schedule";
     }
 
     @PostMapping("/schedule")
     public String schedule(@ModelAttribute("form") @Valid MaintenanceDTO dto,
-                           BindingResult result, Model model) {
+                           BindingResult result, Model model, RedirectAttributes ra) {
+        // If there are validation errors (like empty date), stay on the same page
         if (result.hasErrors()) {
-            System.out.println("Errors: " + result.getAllErrors());
             model.addAttribute("schedules", service.listAll());
             model.addAttribute("availableSpaces", spaceService.listAll());
-            return "maintenance/schedule";
+            return "admin/maintenance/schedule";
         }
+
         service.schedule(dto);
+        ra.addFlashAttribute("successMessage", "Maintenance scheduled! Zone is now locked.");
+        return "redirect:/admin/maintenance";
+    }
+
+    @PostMapping("/toggle/{id}")
+    public String toggleStatus(@PathVariable Integer id, RedirectAttributes ra) {
+        // Get the new status from the service
+        String status = service.toggleStatus(id);
+
+        String msg;
+        if (status.equalsIgnoreCase("COMPLETED")) {
+            msg = "Maintenance finished. Zone is UNLOCKED.";
+        } else {
+            msg = "Maintenance reopened. Zone is LOCKED.";
+        }
+
+        ra.addFlashAttribute("successMessage", msg);
         return "redirect:/admin/maintenance";
     }
 
     @PostMapping("/update/{id}")
     public String update(@PathVariable Integer id,
                          @ModelAttribute("form") @Valid MaintenanceDTO dto,
-                         BindingResult result, Model model) {
+                         BindingResult result, Model model, RedirectAttributes ra) {
         if (result.hasErrors()) {
             model.addAttribute("schedules", service.listAll());
             model.addAttribute("availableSpaces", spaceService.listAll());
-            return "maintenance/schedule";
+            return "admin/maintenance/schedule";
         }
+
         service.update(id, dto);
+        ra.addFlashAttribute("successMessage", "Record updated successfully.");
         return "redirect:/admin/maintenance";
     }
 
     @PostMapping("/delete/{id}")
-    public String delete(@PathVariable Integer id) {
+    public String delete(@PathVariable Integer id, RedirectAttributes ra) {
         service.delete(id);
+        ra.addFlashAttribute("successMessage", "Record removed.");
         return "redirect:/admin/maintenance";
     }
 }
