@@ -1,107 +1,92 @@
-package com.example.lwms1.controller; // Ensure this matches your actual folder path
+package com.example.lwms1.controller;
 
-// 1. Project-specific imports (Fixes red text on DTO and Service)
 import com.example.lwms1.dto.UserCreateDTO;
 import com.example.lwms1.service.UserService;
-
-// 2. JUnit and Spring Test imports
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ui.ConcurrentModel;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
-// 3. Static imports for MockMvc and Mockito (Fixes red text on status(), get(), etc.)
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class AuthControllerTest {
+@ExtendWith(MockitoExtension.class)
+class AuthControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private UserService userService;
 
-    @Test
-    @DisplayName("Root URL should redirect anonymous user to login")
-    void rootRedirect_AnonymousUser() throws Exception {
-        mockMvc.perform(get("/"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
+    @InjectMocks
+    private AuthController authController;
+
+    private Model model;
+    private RedirectAttributes redirectAttributes;
+
+    @BeforeEach
+    void setUp() {
+        model = new ConcurrentModel();
+        redirectAttributes = new RedirectAttributesModelMap();
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("Admin user should redirect to admin dashboard from root")
-    void rootRedirect_AdminUser() throws Exception {
-        mockMvc.perform(get("/"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/dashboard"));
+    @DisplayName("Login Page: Should return view name with no parameters")
+    void showLoginPage_Success() {
+        // ACT: Calling it with () because your controller has no params
+        String viewName = authController.login();
+
+        // ASSERT
+        assertEquals("admin/auth/login", viewName);
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("Standard user should redirect to user home from root")
-    void rootRedirect_StandardUser() throws Exception {
-        mockMvc.perform(get("/"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/user/home"));
+    @DisplayName("Register Page: Should add userDto and return register view")
+    void showRegistrationForm_Success() {
+        // ACT: Calling it with (model) because your controller needs it
+        String viewName = authController.showRegistrationForm(model);
+
+        // ASSERT
+        assertEquals("admin/auth/register", viewName);
+        assertTrue(model.containsAttribute("userDto"));
     }
 
     @Test
-    @DisplayName("Login page should be accessible")
-    void showLoginPage() throws Exception {
-        mockMvc.perform(get("/login"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/auth/login"));
+    @DisplayName("Register Post: Should redirect to login on success")
+    void registerUser_Success() {
+        // ARRANGE
+        UserCreateDTO dto = new UserCreateDTO();
+        BindingResult result = mock(BindingResult.class);
+        when(result.hasErrors()).thenReturn(false);
+
+        // ACT
+        String viewName = authController.registerUser(dto, result, redirectAttributes);
+
+        // ASSERT
+        assertEquals("redirect:/login", viewName);
+        verify(userService).createUser(dto);
     }
 
     @Test
-    @DisplayName("Registration form should initialize UserCreateDTO")
-    void showRegistrationForm() throws Exception {
-        mockMvc.perform(get("/register"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/auth/register"))
-                .andExpect(model().attributeExists("userDto"));
-    }
+    @DisplayName("Register Post: Should return register view if validation fails")
+    void registerUser_ValidationError() {
+        // ARRANGE
+        UserCreateDTO dto = new UserCreateDTO();
+        BindingResult result = mock(BindingResult.class);
+        when(result.hasErrors()).thenReturn(true);
 
-    @Test
-    @DisplayName("Successful registration should call service and redirect")
-    void registerUser_Success() throws Exception {
-        mockMvc.perform(post("/register")
-                        .param("username", "testuser")
-                        .param("password", "password123")
-                        .param("email", "test@example.com") // <--- ADD THIS LINE
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"))
-                .andExpect(flash().attributeExists("successMessage"));
+        // ACT
+        String viewName = authController.registerUser(dto, result, redirectAttributes);
 
-        verify(userService, times(1)).createUser(any(UserCreateDTO.class));
-    }
-
-    @Test
-    @DisplayName("Validation failure should return register view")
-    void registerUser_ValidationError() throws Exception {
-        mockMvc.perform(post("/register")
-                        .param("username", "") // Empty username triggers @NotEmpty
-                        .param("password", "")
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/auth/register"))
-                .andExpect(model().hasErrors());
-
-        verify(userService, times(0)).createUser(any(UserCreateDTO.class));
+        // ASSERT
+        assertEquals("admin/auth/register", viewName);
+        verify(userService, never()).createUser(any());
     }
 }

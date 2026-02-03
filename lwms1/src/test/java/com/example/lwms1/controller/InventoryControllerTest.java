@@ -6,113 +6,126 @@ import com.example.lwms1.model.MaintenanceSchedule;
 import com.example.lwms1.repository.MaintenanceScheduleRepository;
 import com.example.lwms1.service.InventoryService;
 import com.example.lwms1.service.SpaceService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ui.ConcurrentModel;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class InventoryControllerTest {
+@ExtendWith(MockitoExtension.class)
+class InventoryControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock private InventoryService inventoryService;
+    @Mock private SpaceService spaceService;
+    @Mock private MaintenanceScheduleRepository maintenanceRepo;
 
-    @MockBean private InventoryService inventoryService;
-    @MockBean private SpaceService spaceService;
-    @MockBean private MaintenanceScheduleRepository maintenanceRepo;
+    @InjectMocks
+    private InventoryController inventoryController;
+
+    private Model model;
+    private RedirectAttributes redirectAttributes;
+
+    @BeforeEach
+    void setUp() {
+        model = new ConcurrentModel();
+        redirectAttributes = new RedirectAttributesModelMap();
+    }
 
     @Test
-    @DisplayName("List inventory should show items and identify locked spaces")
-    @WithMockUser(roles = "ADMIN")
-    void listInventory_Success() throws Exception {
-        // Mocking maintenance schedule to simulate a locked space (ID: 101)
+    @DisplayName("List: Should return view and identify 'PENDING' maintenance as locked spaces")
+    void listInventory_Success() {
+        // Arrange
         MaintenanceSchedule schedule = new MaintenanceSchedule();
         schedule.setEquipmentId(101);
-        schedule.setCompletionStatus("PENDING");
+        schedule.setCompletionStatus("PENDING"); // Logic from your controller
 
         when(maintenanceRepo.findAll()).thenReturn(List.of(schedule));
         when(inventoryService.listAll()).thenReturn(Collections.emptyList());
         when(spaceService.listAll()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/inventory"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/inventory/list"))
-                .andExpect(model().attribute("lockedSpaceIds", List.of(101)));
+        // Act
+        String viewName = inventoryController.listInventory(model);
+
+        // Assert
+        assertEquals("admin/inventory/list", viewName);
+        List<Integer> lockedIds = (List<Integer>) model.getAttribute("lockedSpaceIds");
+        assertTrue(lockedIds.contains(101), "Space 101 should be locked");
     }
 
     @Test
-    @DisplayName("Add item should redirect on success")
-    @WithMockUser(roles = "ADMIN")
-    void addItem_Success() throws Exception {
-        mockMvc.perform(post("/inventory/add")
-                        .param("itemName", "Pallet Jack")
-                        .param("category", "Equipment")
-                        .param("quantity", "5")
-                        .param("location", "Zone A")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/inventory"))
-                .andExpect(flash().attributeExists("successMessage"));
+    @DisplayName("Add Item: Should redirect to /inventory on success")
+    void addItem_Success() {
+        // Arrange
+        InventoryDTO dto = new InventoryDTO();
+        BindingResult result = mock(BindingResult.class);
+        when(result.hasErrors()).thenReturn(false);
 
-        verify(inventoryService, times(1)).create(any(InventoryDTO.class));
+        // Act
+        String viewName = inventoryController.addItem(dto, result, redirectAttributes, model);
+
+        // Assert
+        assertEquals("redirect:/inventory", viewName);
+        verify(inventoryService).create(dto);
+        assertEquals("Item added successfully!", redirectAttributes.getFlashAttributes().get("successMessage"));
     }
 
     @Test
-    @DisplayName("Update item should redirect on success")
-    @WithMockUser(roles = "ADMIN")
-    void updateItem_Success() throws Exception {
-        mockMvc.perform(post("/inventory/update/1")
-                        .param("itemName", "Updated Item")
-                        .param("category", "Tools")
-                        .param("quantity", "10")
-                        .param("location", "Zone B")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/inventory"));
+    @DisplayName("Update Item: Should call service update with Integer ID")
+    void updateItem_Success() {
+        // Arrange
+        InventoryDTO dto = new InventoryDTO();
+        BindingResult result = mock(BindingResult.class);
+        when(result.hasErrors()).thenReturn(false);
 
+        // Act
+        String viewName = inventoryController.updateItem(1, dto, result, redirectAttributes);
+
+        // Assert
+        assertEquals("redirect:/inventory", viewName);
         verify(inventoryService).update(eq(1), any(InventoryDTO.class));
     }
 
     @Test
-    @DisplayName("Delete item should redirect")
-    @WithMockUser(roles = "ADMIN")
-    void deleteItem_Success() throws Exception {
-        mockMvc.perform(get("/inventory/delete/1"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/inventory"));
+    @DisplayName("Delete Item: Should call service delete and redirect")
+    void deleteItem_Success() {
+        // Act
+        String viewName = inventoryController.deleteItem(1, redirectAttributes);
 
+        // Assert
+        assertEquals("redirect:/inventory", viewName);
         verify(inventoryService).delete(1);
     }
 
     @Test
-    @DisplayName("Show edit form should load item data into DTO")
-    @WithMockUser(roles = "ADMIN")
-    void showEditForm_Success() throws Exception {
+    @DisplayName("Edit Form: Should map Inventory model to DTO for the view")
+    void showEditForm_Success() {
+        // Arrange
         Inventory item = new Inventory();
-        item.setItemId(1);
-        item.setItemName("Forklift");
-        item.setQuantity(2);
+        item.setItemId(50);
+        item.setItemName("Test Item");
+        when(inventoryService.findById(50)).thenReturn(item);
 
-        when(inventoryService.findById(1)).thenReturn(item);
+        // Act
+        String viewName = inventoryController.showEditForm(50, model);
 
-        mockMvc.perform(get("/inventory/edit/1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/inventory/edit"))
-                .andExpect(model().attributeExists("inventoryDTO"));
+        // Assert
+        assertEquals("admin/inventory/edit", viewName);
+        InventoryDTO resultDto = (InventoryDTO) model.getAttribute("inventoryDTO");
+        assertEquals(50, resultDto.getItemId());
+        assertEquals("Test Item", resultDto.getItemName());
     }
 }

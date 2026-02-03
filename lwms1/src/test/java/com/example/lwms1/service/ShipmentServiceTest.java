@@ -24,8 +24,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class ShipmentServiceTest {
 
-    @Mock private ShipmentRepository shipmentRepo;
-    @Mock private InventoryRepository inventoryRepo;
+    @Mock
+    private ShipmentRepository shipmentRepo;
+
+    @Mock
+    private InventoryRepository inventoryRepo;
 
     @InjectMocks
     private ShipmentService shipmentService;
@@ -36,25 +39,29 @@ public class ShipmentServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Initialize Space
         mockSpace = new Space();
         mockSpace.setTotalCapacity(100);
         mockSpace.setUsedCapacity(50);
         mockSpace.setAvailableCapacity(50);
 
+        // Initialize Inventory linked to Space
         mockInventory = new Inventory();
         mockInventory.setItemId(1);
         mockInventory.setQuantity(20);
         mockInventory.setStorageSpace(mockSpace);
 
+        // Initialize DTO for testing
         mockDto = new ShipmentDTO();
         mockDto.setItemId(1);
         mockDto.setQuantity(10);
         mockDto.setOrigin("Warehouse A");
         mockDto.setDestination("Client X");
+        mockDto.setStatus("PENDING");
     }
 
     @Test
-    @DisplayName("Receive (Dispatch): Should reduce inventory and update space")
+    @DisplayName("Receive (Dispatch): Should reduce inventory and update space usage")
     void testReceiveSuccess() {
         // Arrange
         when(inventoryRepo.findById(1)).thenReturn(Optional.of(mockInventory));
@@ -63,10 +70,10 @@ public class ShipmentServiceTest {
         shipmentService.receive(mockDto);
 
         // Assert
-        // 1. Inventory check: 20 - 10 = 10
+        // Inventory check: 20 starting - 10 shipped = 10 left
         assertEquals(10, mockInventory.getQuantity());
 
-        // 2. Space check: 50 used - 10 shipped = 40 used
+        // Space math: 50 used - 10 quantity = 40 new used capacity
         assertEquals(40, mockSpace.getUsedCapacity());
         assertEquals(60, mockSpace.getAvailableCapacity());
 
@@ -75,10 +82,10 @@ public class ShipmentServiceTest {
     }
 
     @Test
-    @DisplayName("Receive (Dispatch): Should throw error if stock is insufficient")
+    @DisplayName("Receive (Dispatch): Should throw error if inventory stock is too low")
     void testReceiveInsufficientStock() {
         // Arrange
-        mockDto.setQuantity(50); // We only have 20 in mockInventory
+        mockDto.setQuantity(50); // Setting quantity higher than mockInventory (20)
         when(inventoryRepo.findById(1)).thenReturn(Optional.of(mockInventory));
 
         // Act & Assert
@@ -89,7 +96,30 @@ public class ShipmentServiceTest {
     }
 
     @Test
-    @DisplayName("Delete: Should roll back space capacity when shipment is canceled")
+    @DisplayName("Update Full Shipment: Should update all shipment fields via DTO")
+    void testUpdateFullShipmentSuccess() {
+        // Arrange
+        Shipment existingShipment = new Shipment();
+        existingShipment.setShipmentId(100);
+        existingShipment.setStatus("PENDING");
+
+        mockDto.setShipmentId(100);
+        mockDto.setStatus("DELIVERED");
+        mockDto.setItemId(1);
+
+        when(shipmentRepo.findById(100)).thenReturn(Optional.of(existingShipment));
+        when(inventoryRepo.findById(1)).thenReturn(Optional.of(mockInventory));
+
+        // Act
+        shipmentService.updateFullShipment(mockDto);
+
+        // Assert
+        assertEquals("DELIVERED", existingShipment.getStatus());
+        verify(shipmentRepo).save(existingShipment);
+    }
+
+    @Test
+    @DisplayName("Delete: Should increase space capacity when shipment is deleted")
     void testDeleteRollbackSpace() {
         // Arrange
         Shipment s = new Shipment();
@@ -103,24 +133,19 @@ public class ShipmentServiceTest {
         shipmentService.delete(100);
 
         // Assert
-        // Initial used was 50. Deleting shipment of 10 "adds it back" to space usage
+        // If we delete a shipment of 10, your service logic adds 10 back to UsedCapacity
+        // Initial 50 + 10 = 60
         assertEquals(60, mockSpace.getUsedCapacity());
         verify(shipmentRepo).delete(s);
     }
 
     @Test
-    @DisplayName("Update Status: Should change status correctly")
-    void testUpdateStatus() {
+    @DisplayName("Get Shipment: Should throw ResourceNotFoundException for invalid ID")
+    void testGetNotFound() {
         // Arrange
-        Shipment s = new Shipment();
-        s.setStatus("DISPATCHED");
-        when(shipmentRepo.findById(100)).thenReturn(Optional.of(s));
+        when(shipmentRepo.findById(999)).thenReturn(Optional.empty());
 
-        // Act
-        shipmentService.updateStatus(100, "DELIVERED");
-
-        // Assert
-        assertEquals("DELIVERED", s.getStatus());
-        verify(shipmentRepo).save(s);
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> shipmentService.get(999));
     }
 }

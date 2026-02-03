@@ -12,7 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate; // Use LocalDate, not LocalDateTime
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,80 +33,88 @@ public class MaintenanceServiceTest {
     @BeforeEach
     void setUp() {
         mockTask = new MaintenanceSchedule();
-
-        // FIX 1: Match scheduleId from your model
+        // Matching your model's field names
         mockTask.setScheduleId(1);
-
         mockTask.setEquipmentId(101);
         mockTask.setCompletionStatus("PENDING");
-        mockTask.setDescription("Floor Repair");
-
-        // FIX 2: Use LocalDate.now() to match your model's LocalDate type
+        mockTask.setDescription("Standard Maintenance");
+        // Using LocalDate to match your model exactly
         mockTask.setScheduledDate(LocalDate.now());
     }
 
     @Test
-    @DisplayName("Toggle: Should change PENDING to COMPLETED")
+    @DisplayName("Toggle Status: Should switch from PENDING to COMPLETED")
     void testToggleStatusToCompleted() {
+        // Arrange
         when(repo.findById(1)).thenReturn(Optional.of(mockTask));
         when(repo.save(any(MaintenanceSchedule.class))).thenReturn(mockTask);
 
-        String newStatus = service.toggleStatus(1);
+        // Act
+        String resultStatus = service.toggleStatus(1);
 
-        assertEquals("COMPLETED", newStatus);
+        // Assert
+        assertEquals("COMPLETED", resultStatus);
         assertEquals("COMPLETED", mockTask.getCompletionStatus());
         verify(repo).save(mockTask);
     }
 
     @Test
-    @DisplayName("Toggle: Should change COMPLETED back to PENDING")
+    @DisplayName("Toggle Status: Should switch from COMPLETED back to PENDING")
     void testToggleStatusToPending() {
+        // Arrange
         mockTask.setCompletionStatus("COMPLETED");
         when(repo.findById(1)).thenReturn(Optional.of(mockTask));
-        // repo.save is usually called in toggleStatus, so we mock it to avoid issues
         when(repo.save(any(MaintenanceSchedule.class))).thenReturn(mockTask);
 
-        String newStatus = service.toggleStatus(1);
+        // Act
+        String resultStatus = service.toggleStatus(1);
 
-        assertEquals("PENDING", newStatus);
+        // Assert
+        assertEquals("PENDING", resultStatus);
         verify(repo).save(mockTask);
     }
 
     @Test
-    @DisplayName("Schedule: Should default to PENDING status")
+    @DisplayName("Schedule: Should default to PENDING status when no status is provided in DTO")
     void testScheduleDefaultsToPending() {
+        // Arrange
         MaintenanceDTO dto = new MaintenanceDTO();
         dto.setEquipmentId(101);
-        dto.setDescription("New Task");
-
-        // FIX 3: Ensure DTO also uses LocalDate
+        dto.setDescription("New Floor Repair");
         dto.setScheduledDate(LocalDate.now());
 
-        when(repo.save(any(MaintenanceSchedule.class))).thenAnswer(i -> i.getArgument(0));
+        when(repo.save(any(MaintenanceSchedule.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // Act
         MaintenanceSchedule saved = service.schedule(dto);
 
+        // Assert
         assertEquals("PENDING", saved.getCompletionStatus());
         verify(repo).save(any(MaintenanceSchedule.class));
     }
 
     @Test
-    @DisplayName("Count: Should call optimized repository method")
-    void testPendingCount() {
-        when(repo.countByCompletionStatusIgnoreCase("PENDING")).thenReturn(5L);
+    @DisplayName("Get Count: Should return the number of pending tasks")
+    void testGetPendingMaintenanceCount() {
+        // Arrange
+        when(repo.countByCompletionStatusIgnoreCase("PENDING")).thenReturn(10L);
 
+        // Act
         long count = service.getPendingMaintenanceCount();
 
-        assertEquals(5L, count);
-        verify(repo, times(1)).countByCompletionStatusIgnoreCase("PENDING");
+        // Assert
+        assertEquals(10L, count);
+        verify(repo).countByCompletionStatusIgnoreCase("PENDING");
     }
 
     @Test
-    @DisplayName("Error: Should throw Exception if task ID is invalid")
-    void testToggleWithInvalidId() {
-        when(repo.findById(99)).thenReturn(Optional.empty());
+    @DisplayName("Error Handling: Should throw ResourceNotFoundException for invalid ID")
+    void testToggleWithInvalidIdThrowsException() {
+        // Arrange
+        when(repo.findById(999)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> service.toggleStatus(99));
+        // Act & Assert
+        assertThrows(ResourceNotFoundException.class, () -> service.toggleStatus(999));
         verify(repo, never()).save(any());
     }
 }

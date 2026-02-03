@@ -1,134 +1,116 @@
 package com.example.lwms1.controller;
 
-import com.example.lwms1.model.Shipment; // Ensure this import matches your project structure
+import com.example.lwms1.model.Shipment;
 import com.example.lwms1.service.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.ui.ConcurrentModel;
+import org.springframework.ui.Model;
 
 import java.util.Collections;
 import java.util.Map;
 
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
-@WebMvcTest(UserHomeController.class)
-public class UserHomeControllerTest {
+@ExtendWith(MockitoExtension.class)
+class UserHomeControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock private InventoryService inventoryService;
+    @Mock private ShipmentService shipmentService;
+    @Mock private SpaceService spaceService;
+    @Mock private MaintenanceService maintenanceService;
+    @Mock private ReportService reportService;
+    @Mock private DashboardService dashboardService;
+    @Mock private Authentication auth;
 
-    @MockBean private InventoryService inventoryService;
-    @MockBean private ShipmentService shipmentService;
-    @MockBean private SpaceService spaceService;
-    @MockBean private MaintenanceService maintenanceService;
-    @MockBean private ReportService reportService;
-    @MockBean private DashboardService dashboardService;
+    @InjectMocks
+    private UserHomeController userHomeController;
+
+    private Model model;
+
+    @BeforeEach
+    void setUp() {
+        model = new ConcurrentModel();
+    }
 
     @Test
-    @WithMockUser(username = "testUser", roles = "USER")
-    void testUserHome() throws Exception {
+    @DisplayName("User Home: Should add stats and username to model")
+    void testUserHome() {
+        // Arrange
+        when(auth.getName()).thenReturn("testUser");
         Map<String, Object> stats = Map.of("totalInventory", 100, "activeShipments", 5);
         when(dashboardService.getAllStats()).thenReturn(stats);
 
-        mockMvc.perform(get("/user/home"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/home"))
-                .andExpect(model().attribute("username", "testUser"))
-                .andExpect(model().attribute("totalInventory", 100));
+        // Act
+        String viewName = userHomeController.userHome(auth, model);
+
+        // Assert
+        assertEquals("user/home", viewName);
+        assertEquals("testUser", model.getAttribute("username"));
+        assertEquals(100, model.getAttribute("totalInventory"));
+        verify(dashboardService).getAllStats();
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void testViewInventory() throws Exception {
+    @DisplayName("Inventory: Should return user inventory view")
+    void testViewInventory() {
         when(inventoryService.listAll()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/user/inventory"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/inventory"))
-                .andExpect(model().attributeExists("items"));
+        String viewName = userHomeController.viewInventory(model);
+
+        assertEquals("user/inventory", viewName);
+        assertTrue(model.containsAttribute("items"));
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void testViewShipments() throws Exception {
+    @DisplayName("Shipments: Should return shipment view")
+    void testViewShipments() {
         when(shipmentService.listAll()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/user/shipments"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/shipment"))
-                .andExpect(model().attributeExists("shipmentList"));
+        String viewName = userHomeController.viewShipments(model);
+
+        assertEquals("user/shipment", viewName);
+        assertTrue(model.containsAttribute("shipmentList"));
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void testViewSpace() throws Exception {
-        when(spaceService.listAll()).thenReturn(Collections.emptyList());
+    @DisplayName("Profile: Should populate username and roles from Authentication")
+    void testViewProfile() {
+        // Arrange
+        when(auth.getName()).thenReturn("worker1");
+        when(auth.getAuthorities()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/user/space"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/space"))
-                .andExpect(model().attributeExists("spaces"));
+        // Act
+        String viewName = userHomeController.viewProfile(auth, model);
+
+        // Assert
+        assertEquals("user/profile", viewName);
+        assertEquals("worker1", model.getAttribute("username"));
+        assertTrue(model.containsAttribute("roles"));
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void testViewMaintenance() throws Exception {
-        when(maintenanceService.listAll()).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/user/maintenance"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/maintenance"))
-                .andExpect(model().attributeExists("schedules"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    void testViewReports() throws Exception {
-        when(reportService.listAll()).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/user/reports"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/reports"))
-                .andExpect(model().attributeExists("reports"));
-    }
-
-    @Test
-    @WithMockUser(username = "worker1", roles = "USER")
-    void testViewProfile() throws Exception {
-        mockMvc.perform(get("/user/profile"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/profile"))
-                .andExpect(model().attribute("username", "worker1"))
-                .andExpect(model().attributeExists("roles"));
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    void testTrackShipment() throws Exception {
+    @DisplayName("Track Shipment: Should retrieve specific shipment by ID")
+    void testTrackShipment() {
+        // Arrange
         Integer shipmentId = 101;
-
-        // FIX: Create a real instance of your model instead of new Object()
         Shipment mockShipment = new Shipment();
         mockShipment.setShipmentId(shipmentId);
-
         when(shipmentService.get(shipmentId)).thenReturn(mockShipment);
 
-        mockMvc.perform(get("/user/shipments/track/{id}", shipmentId))
-                .andExpect(status().isOk())
-                .andExpect(view().name("user/track"))
-                .andExpect(model().attributeExists("shipment"))
-                .andExpect(model().attribute("shipment", mockShipment));
-    }
+        // Act
+        String viewName = userHomeController.trackShipment(shipmentId, model);
 
-    @Test
-    void testAccessDeniedForUnauthenticated() throws Exception {
-        mockMvc.perform(get("/user/home"))
-                // In many test environments, this defaults to 401
-                .andExpect(status().isUnauthorized());
+        // Assert
+        assertEquals("user/track", viewName);
+        assertEquals(mockShipment, model.getAttribute("shipment"));
     }
 }

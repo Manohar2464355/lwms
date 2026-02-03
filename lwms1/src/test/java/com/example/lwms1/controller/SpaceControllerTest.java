@@ -1,105 +1,140 @@
 package com.example.lwms1.controller;
 
 import com.example.lwms1.dto.SpaceDTO;
+import com.example.lwms1.model.Space;
 import com.example.lwms1.service.SpaceService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ui.ConcurrentModel;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(SpaceController.class)
-@WithMockUser(roles = "ADMIN")
-public class SpaceControllerTest {
+@ExtendWith(MockitoExtension.class)
+class SpaceControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private SpaceService spaceService;
 
+    @InjectMocks
+    private SpaceController spaceController;
+
+    private Model model;
+    private RedirectAttributes redirectAttributes;
+
+    @BeforeEach
+    void setUp() {
+        model = new ConcurrentModel();
+        redirectAttributes = new RedirectAttributesModelMap();
+    }
+
     @Test
-    void testUsagePageLoads() throws Exception {
+    @DisplayName("Usage Page: Should return usage view and populate space list")
+    void testUsagePageLoads() {
+        // Arrange
         when(spaceService.listAll()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/admin/space"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/space/usage"))
-                // Removed "alloc" as it is no longer used in the controller
-                .andExpect(model().attributeExists("spaces", "form"));
+        // Act
+        String viewName = spaceController.usage(model);
+
+        // Assert
+        assertEquals("admin/space/usage", viewName);
+        assertTrue(model.containsAttribute("spaces"));
+        assertTrue(model.containsAttribute("form"));
+        verify(spaceService).listAll();
     }
 
     @Test
-    void testAddSpaceSuccess() throws Exception {
-        mockMvc.perform(post("/admin/space/add")
-                        .param("zone", "Zone A")
-                        .param("totalCapacity", "100")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/space"))
-                .andExpect(flash().attributeExists("success"));
+    @DisplayName("Add Space: Should redirect and show success message")
+    void testAddSpaceSuccess() {
+        // Arrange
+        SpaceDTO dto = new SpaceDTO();
+        BindingResult result = mock(BindingResult.class);
+        when(result.hasErrors()).thenReturn(false);
 
-        verify(spaceService, times(1)).create(any(SpaceDTO.class));
+        // Act
+        String viewName = spaceController.add(dto, result, model, redirectAttributes);
+
+        // Assert
+        assertEquals("redirect:/admin/space", viewName);
+        verify(spaceService).create(dto);
+        assertEquals("Zone created successfully!", redirectAttributes.getFlashAttributes().get("success"));
     }
 
     @Test
-    void testAddSpaceValidationFailure() throws Exception {
-        mockMvc.perform(post("/admin/space/add")
-                        .param("zone", "")
-                        .param("totalCapacity", "-5")
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/space/usage"))
-                .andExpect(model().hasErrors());
+    @DisplayName("Add Space: Should return usage view on validation failure")
+    void testAddSpaceValidationFailure() {
+        // Arrange
+        SpaceDTO dto = new SpaceDTO();
+        BindingResult result = mock(BindingResult.class);
+        when(result.hasErrors()).thenReturn(true);
+        when(spaceService.listAll()).thenReturn(Collections.emptyList());
 
+        // Act
+        String viewName = spaceController.add(dto, result, model, redirectAttributes);
+
+        // Assert
+        assertEquals("admin/space/usage", viewName);
         verify(spaceService, never()).create(any());
     }
 
     @Test
-    void testEditPageLoads() throws Exception {
-        var mockSpace = new com.example.lwms1.model.Space();
+    @DisplayName("Edit Page: Should map Space entity to DTO and return edit view")
+    void testEditPageLoads() {
+        // Arrange
+        Space mockSpace = new Space();
         mockSpace.setZone("Zone B");
         mockSpace.setTotalCapacity(50);
-
         when(spaceService.getById(1)).thenReturn(mockSpace);
 
-        mockMvc.perform(get("/admin/space/edit/1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/space/edit"))
-                .andExpect(model().attribute("spaceId", 1))
-                .andExpect(model().attributeExists("form"));
+        // Act
+        String viewName = spaceController.edit(1, model);
+
+        // Assert
+        assertEquals("admin/space/edit", viewName);
+        assertEquals(1, model.getAttribute("spaceId"));
+        SpaceDTO form = (SpaceDTO) model.getAttribute("form");
+        assertEquals("Zone B", form.getZone());
     }
 
     @Test
-    void testUpdateSuccess() throws Exception {
-        mockMvc.perform(post("/admin/space/update/1")
-                        .param("zone", "Updated Zone")
-                        .param("totalCapacity", "200")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/space"))
-                .andExpect(flash().attribute("success", "Zone updated successfully!"));
+    @DisplayName("Update: Should call service update and redirect")
+    void testUpdateSuccess() {
+        // Arrange
+        SpaceDTO dto = new SpaceDTO();
+        BindingResult result = mock(BindingResult.class);
+        when(result.hasErrors()).thenReturn(false);
 
+        // Act
+        String viewName = spaceController.update(1, dto, result, model, redirectAttributes);
+
+        // Assert
+        assertEquals("redirect:/admin/space", viewName);
         verify(spaceService).update(eq(1), any(SpaceDTO.class));
+        assertEquals("Zone updated successfully!", redirectAttributes.getFlashAttributes().get("success"));
     }
 
     @Test
-    void testDeleteSpace() throws Exception {
-        mockMvc.perform(post("/admin/space/delete/1")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/space"));
+    @DisplayName("Delete: Should call service delete and redirect")
+    void testDeleteSpace() {
+        // Act
+        String viewName = spaceController.delete(1, redirectAttributes);
 
+        // Assert
+        assertEquals("redirect:/admin/space", viewName);
         verify(spaceService).delete(1);
     }
 }

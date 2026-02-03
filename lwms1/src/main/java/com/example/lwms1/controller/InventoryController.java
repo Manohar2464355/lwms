@@ -7,8 +7,9 @@ import com.example.lwms1.repository.MaintenanceScheduleRepository;
 import com.example.lwms1.service.InventoryService;
 import com.example.lwms1.service.SpaceService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -21,6 +22,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/inventory")
 public class InventoryController {
+    private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
 
     private final InventoryService inventoryService;
     private final SpaceService spaceService;
@@ -37,7 +39,10 @@ public class InventoryController {
 
     @GetMapping
     public String listInventory(Model model) {
+        logger.info("List Inventory Started");
         model.addAttribute("items", inventoryService.listAll());
+        logger.info("List Inventory",inventoryService.listAll());
+
         model.addAttribute("inventoryDTO", new InventoryDTO());
         model.addAttribute("spaces", spaceService.listAll());
 
@@ -56,7 +61,6 @@ public class InventoryController {
         return "admin/inventory/list";
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/add")
     public String addItem(@Valid @ModelAttribute("inventoryDTO") InventoryDTO dto,
                           BindingResult result, RedirectAttributes ra, Model model) {
@@ -71,7 +75,6 @@ public class InventoryController {
         return "redirect:/inventory";
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/update/{id}")
     public String updateItem(@PathVariable Integer id,
                              @Valid @ModelAttribute("inventoryDTO") InventoryDTO dto,
@@ -85,7 +88,6 @@ public class InventoryController {
         return "redirect:/inventory";
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/delete/{id}")
     public String deleteItem(@PathVariable Integer id, RedirectAttributes ra) {
         inventoryService.delete(id);
@@ -93,7 +95,6 @@ public class InventoryController {
         return "redirect:/inventory";
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Integer id, Model model) {
         Inventory item = inventoryService.findById(id);
@@ -109,4 +110,5 @@ public class InventoryController {
         model.addAttribute("spaces", spaceService.listAll());
         return "admin/inventory/edit";
     }
+
 }

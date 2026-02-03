@@ -5,7 +5,6 @@ import com.example.lwms1.model.Space;
 import com.example.lwms1.service.SpaceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,7 +15,6 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/admin/space")
-@PreAuthorize("hasRole('ADMIN')")
 public class SpaceController {
 
     private final SpaceService service;

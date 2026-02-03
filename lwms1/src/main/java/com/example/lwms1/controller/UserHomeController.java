@@ -2,7 +2,6 @@ package com.example.lwms1.controller;
 
 import com.example.lwms1.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/user")
-@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 public class UserHomeController {
 
     private final InventoryService inventoryService;

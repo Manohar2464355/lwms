@@ -31,20 +31,19 @@ public class ReportServiceTest {
     private ReportService reportService;
 
     @Test
-    @DisplayName("Generate: Inventory Report should contain item details")
+    @DisplayName("Generate: Inventory Report should correctly format item data")
     void testGenerateInventoryReport() {
         // Arrange
         ReportDTO dto = new ReportDTO();
         dto.setReportType("INVENTORY");
-        dto.setCustomNotes("Monthly Check");
+        dto.setCustomNotes("Stock audit");
 
         Inventory item = new Inventory();
-        item.setItemName("Gadget");
-        item.setQuantity(50);
-        item.setLocation("Zone-A");
+        item.setItemName("Smartphone");
+        item.setQuantity(100);
+        item.setLocation("Warehouse-B");
 
         when(inventoryRepo.findAll()).thenReturn(Collections.singletonList(item));
-        when(inventoryRepo.count()).thenReturn(1L);
 
         // Act
         reportService.generate(dto);
@@ -53,25 +52,54 @@ public class ReportServiceTest {
         ArgumentCaptor<Report> captor = ArgumentCaptor.forClass(Report.class);
         verify(reportRepo).save(captor.capture());
 
-        Report savedReport = captor.getValue();
-        assertTrue(savedReport.getDetails().contains("Gadget"));
-        assertTrue(savedReport.getDetails().contains("50"));
-        assertTrue(savedReport.getDetails().contains("Monthly Check"));
-        assertEquals("INVENTORY", savedReport.getReportType());
+        Report result = captor.getValue();
+        String details = result.getDetails();
+
+        assertEquals("INVENTORY", result.getReportType());
+        assertTrue(details.contains("Smartphone"), "Report should contain item name");
+        assertTrue(details.contains("100"), "Report should contain quantity");
+        assertTrue(details.contains("Stock audit"), "Report should contain custom notes");
+        verify(inventoryRepo).findAll();
     }
 
     @Test
-    @DisplayName("Generate: Space Report should format capacity correctly")
+    @DisplayName("Generate: Shipment Report should include shipment status and destination")
+    void testGenerateShipmentReport() {
+        // Arrange
+        ReportDTO dto = new ReportDTO();
+        dto.setReportType("SHIPMENT");
+
+        Shipment shipment = new Shipment();
+        shipment.setShipmentId(501);
+        shipment.setDestination("New York");
+        shipment.setStatus("SHIPPED");
+
+        when(shipmentRepo.findAll()).thenReturn(Collections.singletonList(shipment));
+
+        // Act
+        reportService.generate(dto);
+
+        // Assert
+        ArgumentCaptor<Report> captor = ArgumentCaptor.forClass(Report.class);
+        verify(reportRepo).save(captor.capture());
+
+        String details = captor.getValue().getDetails();
+        assertTrue(details.contains("#SH-501"), "Should match the #SH- format in service");
+        assertTrue(details.contains("New York"));
+        assertTrue(details.contains("SHIPPED"));
+    }
+
+    @Test
+    @DisplayName("Generate: Space Report should include zone and capacity details")
     void testGenerateSpaceReport() {
         // Arrange
         ReportDTO dto = new ReportDTO();
         dto.setReportType("SPACE");
 
         Space space = new Space();
-        space.setZone("Cold-Storage");
-        space.setTotalCapacity(1000);
-        space.setUsedCapacity(200);
-        space.setAvailableCapacity(800);
+        space.setZone("Loading-Dock");
+        space.setTotalCapacity(500);
+        space.setUsedCapacity(150);
 
         when(spaceRepo.findAll()).thenReturn(Collections.singletonList(space));
 
@@ -83,25 +111,25 @@ public class ReportServiceTest {
         verify(reportRepo).save(captor.capture());
 
         String details = captor.getValue().getDetails();
-        assertTrue(details.contains("Cold-Storage"));
-        assertTrue(details.contains("1000"));
-        assertTrue(details.contains("800"));
+        assertTrue(details.contains("Loading-Dock"));
+        assertTrue(details.contains("500"));
+        assertTrue(details.contains("150"));
     }
 
     @Test
-    @DisplayName("Generate: Maintenance Report should handle LocalDate correctly")
+    @DisplayName("Generate: Maintenance Report should include task description and status")
     void testGenerateMaintenanceReport() {
         // Arrange
         ReportDTO dto = new ReportDTO();
         dto.setReportType("MAINTENANCE");
 
-        MaintenanceSchedule m = new MaintenanceSchedule();
-        m.setEquipmentId(101);
-        m.setDescription("Repainting lines");
-        m.setCompletionStatus("PENDING");
-        m.setScheduledDate(LocalDate.now());
+        MaintenanceSchedule task = new MaintenanceSchedule();
+        task.setEquipmentId(202);
+        task.setDescription("HVAC Repair");
+        task.setCompletionStatus("IN_PROGRESS");
+        task.setScheduledDate(LocalDate.now());
 
-        when(maintenanceRepo.findAll()).thenReturn(Collections.singletonList(m));
+        when(maintenanceRepo.findAll()).thenReturn(Collections.singletonList(task));
 
         // Act
         reportService.generate(dto);
@@ -111,7 +139,8 @@ public class ReportServiceTest {
         verify(reportRepo).save(captor.capture());
 
         String details = captor.getValue().getDetails();
-        assertTrue(details.contains("Repainting lines"));
-        assertTrue(details.contains("PENDING"));
+        assertTrue(details.contains("HVAC Repair"));
+        assertTrue(details.contains("IN_PROGRESS"));
+        assertTrue(details.contains("202"));
     }
 }

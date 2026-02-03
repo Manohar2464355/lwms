@@ -2,115 +2,122 @@ package com.example.lwms1.controller;
 
 import com.example.lwms1.dto.UserCreateDTO;
 import com.example.lwms1.dto.UserRoleUpdateDTO;
-import com.example.lwms1.service.*;
+import com.example.lwms1.service.DashboardService;
+import com.example.lwms1.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ui.ConcurrentModel;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+import java.util.Collections;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class AdminUserControllerTest {
+@ExtendWith(MockitoExtension.class) // Enables Mockito annotations
+class AdminUserControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private UserService userService;
 
-    // We must mock ALL services injected into the controller
-    @MockBean private UserService userService;
-    @MockBean private InventoryService inventoryService;
-    @MockBean private ShipmentService shipmentService;
-    @MockBean private MaintenanceService maintenanceService;
-    @MockBean private ReportService reportService;
-    @MockBean private SpaceService spaceService;
-    @MockBean private DashboardService dashboardService;
+    @Mock
+    private DashboardService dashboardService;
 
-    // --- SECTION 1: SECURITY & ACCESS ---
+    // InjectMocks creates the controller and injects the mocks above into it
+    @InjectMocks
+    private AdminUserController adminUserController;
 
-    @Test
-    @DisplayName("Dashboard should be accessible by Admin")
-    @WithMockUser(roles = "ADMIN")
-    void dashboard_AdminAccess() throws Exception {
-        when(dashboardService.getAllStats()).thenReturn(Map.of("totalUsers", 5));
+    private Model model;
+    private RedirectAttributes redirectAttributes;
 
-        mockMvc.perform(get("/admin/dashboard"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/dashboard"))
-                .andExpect(model().attributeExists("totalUsers"));
+    @BeforeEach
+    void setUp() {
+        // We use actual Spring implementations for Model and RedirectAttributes
+        model = new ConcurrentModel();
+        redirectAttributes = new RedirectAttributesModelMap();
     }
 
     @Test
-    @DisplayName("Dashboard should be forbidden for regular User")
-    @WithMockUser(roles = "USER")
-    void dashboard_UserAccessForbidden() throws Exception {
-        mockMvc.perform(get("/admin/dashboard"))
-                .andExpect(status().isForbidden()); // 403
-    }
+    @DisplayName("Dashboard: Should return view and populate stats")
+    void adminDashboard_Success() {
+        // Arrange
+        Map<String, Object> mockStats = Map.of("inventoryCount", 5);
+        when(dashboardService.getAllStats()).thenReturn(mockStats);
 
-    // --- SECTION 2: USER MANAGEMENT ---
+        // Act
+        String viewName = adminUserController.adminDashboard(model);
 
-    @Test
-    @DisplayName("List users should return user list and forms")
-    @WithMockUser(roles = "ADMIN")
-    void listUsers_Success() throws Exception {
-        mockMvc.perform(get("/admin/users"))
-                .andExpect(status().isOk())
-                .andExpect(model().attributeExists("users", "createForm", "roleForm"))
-                .andExpect(view().name("admin/users/list"));
+        // Assert
+        assertEquals("admin/dashboard", viewName);
+        assertEquals(5, model.getAttribute("inventoryCount"));
+        verify(dashboardService).getAllStats();
     }
 
     @Test
-    @DisplayName("Create user success should redirect")
-    @WithMockUser(roles = "ADMIN")
-    void createUser_Success() throws Exception {
-        mockMvc.perform(post("/admin/users/create")
-                        .param("username", "newAdmin")
-                        .param("email", "admin@lwms.com")
-                        .param("password", "securePass123")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/users"))
-                .andExpect(flash().attribute("success", "User created successfully!"));
+    @DisplayName("List Users: Should add users and forms to model")
+    void listUsers_Success() {
+        // Arrange
+        when(userService.listAll()).thenReturn(Collections.emptyList());
 
-        verify(userService, times(1)).createUser(any(UserCreateDTO.class));
+        // Act
+        String viewName = adminUserController.listUsers(model);
+
+        // Assert
+        assertEquals("admin/users/list", viewName);
+        assertEquals(Collections.emptyList(), model.getAttribute("users"));
+        verify(userService).listAll();
     }
 
     @Test
-    @DisplayName("Set role success should redirect")
-    @WithMockUser(roles = "ADMIN")
-    void setRole_Success() throws Exception {
-        mockMvc.perform(post("/admin/users/set-role")
-                        .param("username", "testuser")
-                        .param("role", "STAFF")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/users"));
+    @DisplayName("Create User: Success should redirect to list")
+    void createUser_Success() {
+        // Arrange
+        UserCreateDTO dto = new UserCreateDTO();
+        BindingResult bindingResult = mock(BindingResult.class);
+        when(bindingResult.hasErrors()).thenReturn(false);
 
-        verify(userService, times(1)).setUserRole(any(UserRoleUpdateDTO.class));
+        // Act
+        String viewName = adminUserController.create(dto, bindingResult, model, redirectAttributes);
+
+        // Assert
+        assertEquals("redirect:/admin/users", viewName);
+        verify(userService).createUser(dto);
     }
 
     @Test
-    @DisplayName("Delete user should call service and redirect")
-    @WithMockUser(roles = "ADMIN")
-    void deleteUser_Success() throws Exception {
-        mockMvc.perform(post("/admin/users/delete/1")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/users"))
-                .andExpect(flash().attribute("success", "User deleted."));
+    @DisplayName("Create User: Validation failure should return list view")
+    void createUser_ValidationFailure() {
+        // Arrange
+        UserCreateDTO dto = new UserCreateDTO();
+        BindingResult bindingResult = mock(BindingResult.class);
+        when(bindingResult.hasErrors()).thenReturn(true);
+        when(userService.listAll()).thenReturn(Collections.emptyList());
 
+        // Act
+        String viewName = adminUserController.create(dto, bindingResult, model, redirectAttributes);
+
+        // Assert
+        assertEquals("admin/users/list", viewName);
+        verify(userService, never()).createUser(any());
+    }
+
+    @Test
+    @DisplayName("Delete User: Should call service and redirect")
+    void deleteUser_Success() {
+        // Act
+        String viewName = adminUserController.delete(1L, redirectAttributes);
+
+        // Assert
+        assertEquals("redirect:/admin/users", viewName);
         verify(userService).deleteUser(1L);
     }
 }

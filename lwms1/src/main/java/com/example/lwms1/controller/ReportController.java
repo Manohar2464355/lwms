@@ -4,7 +4,6 @@ import com.example.lwms1.dto.ReportDTO;
 import com.example.lwms1.model.Report;
 import com.example.lwms1.service.ReportService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +30,6 @@ public class ReportController {
         return "admin/report/list";
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/generate")
     public String generate(@ModelAttribute("form") ReportDTO dto, RedirectAttributes ra) {
         service.generate(dto);
@@ -39,7 +37,6 @@ public class ReportController {
         return "redirect:/admin/reports";
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Integer id, RedirectAttributes ra) {
         service.delete(id);

@@ -1,5 +1,6 @@
 package com.example.lwms1.service;
 
+import com.example.lwms1.controller.InventoryController;
 import com.example.lwms1.dto.InventoryDTO;
 import com.example.lwms1.exception.BusinessException;
 import com.example.lwms1.exception.ResourceNotFoundException;
@@ -8,6 +9,8 @@ import com.example.lwms1.model.Space;
 import com.example.lwms1.repository.InventoryRepository;
 import com.example.lwms1.repository.SpaceRepository;
 import com.example.lwms1.repository.MaintenanceScheduleRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ public class InventoryService {
     private final InventoryRepository repo;
     private final SpaceRepository spaceRepo;
     private final MaintenanceScheduleRepository maintenanceRepo;
+    private static final Logger logger = LoggerFactory.getLogger(InventoryService.class);
 
     @Autowired
     public InventoryService(InventoryRepository repo,
@@ -35,6 +39,7 @@ public class InventoryService {
     private void verifySpaceIsNotUnderMaintenance(Integer spaceId, String zoneName) {
         boolean isLocked = maintenanceRepo.existsByEquipmentIdAndCompletionStatusIgnoreCase(spaceId, "PENDING");
         if (isLocked) {
+            logger.warn("Account is locked",isLocked);
             throw new BusinessException("Action Denied: Zone " + zoneName + " is currently under maintenance.");
         }
     }
@@ -46,6 +51,7 @@ public class InventoryService {
         }
         return itemOpt.get();
     }
+
 
     public List<Inventory> listAll() {
         return repo.findAll();
@@ -73,7 +79,8 @@ public class InventoryService {
         if (dto.getLocation() == null || dto.getLocation().isEmpty()) {
             throw new BusinessException("Storage location is required.");
         }
-
+//optional is a class in java 1.8 to prevent null pointer exception here and there are few methods like is empty and is preset()
+        //isEmpty()-> to check data is empty or not and isPresent(0->is data present yes or not
         Optional<Space> spaceOpt = spaceRepo.findByZone(dto.getLocation());
         if (spaceOpt.isEmpty()) {
             throw new ResourceNotFoundException("Target Space '" + dto.getLocation() + "' not found");

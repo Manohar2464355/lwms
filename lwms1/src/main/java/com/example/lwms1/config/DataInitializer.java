@@ -15,28 +15,21 @@ import java.util.Set;
 public class DataInitializer {
 
     @Bean
-    CommandLineRunner initDatabase(RoleRepository roleRepo,
-                                   UserAccountRepository userRepo,
-                                   PasswordEncoder encoder) {
+    CommandLineRunner initDatabase(RoleRepository roleRepo, UserAccountRepository userRepo, PasswordEncoder encoder) {
         return args -> {
-            // 1. Initialize Roles
+            // Create Role if it doesn't exist
             Role adminRole = roleRepo.findByName("ROLE_ADMIN")
                     .orElseGet(() -> roleRepo.save(new Role("ROLE_ADMIN")));
 
-            roleRepo.findByName("ROLE_USER")
-                    .orElseGet(() -> roleRepo.save(new Role("ROLE_USER")));
-
-            // 2. Initialize Admin User (The missing part!)
+            // Create Admin User if they don't exist
             if (userRepo.findByUsername("admin").isEmpty()) {
                 UserAccount admin = new UserAccount();
                 admin.setUsername("admin");
-                admin.setEmail("admin@lwms.com");
-                admin.setPassword(encoder.encode("admin123")); // Encrypts the password
+                admin.setPassword(encoder.encode("admin123")); // Encryption is mandatory
+                admin.setRoles(Set.of(adminRole));
                 admin.setEnabled(true);
-                admin.setRoles(Set.of(adminRole)); // Links user to the ADMIN role
 
                 userRepo.save(admin);
-                System.out.println(">> Security: Default Admin account created (admin/admin123)");
             }
         };
     }

@@ -1,5 +1,6 @@
 package com.example.lwms1.model;
 
+import com.example.lwms1.exception.BusinessException;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
@@ -46,6 +47,7 @@ public class Inventory {
     public Space getStorageSpace() {
         return storageSpace;
     }
+
 
     public void setStorageSpace(Space storageSpace) {
         this.storageSpace = storageSpace;

@@ -1,20 +1,17 @@
 package com.example.lwms1.controller;
 
 import com.example.lwms1.dto.ShipmentDTO;
-import com.example.lwms1.model.Inventory;
 import com.example.lwms1.model.Shipment;
 import com.example.lwms1.service.InventoryService;
 import com.example.lwms1.service.ShipmentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
 
 @Controller
 @RequestMapping("/admin/shipments")
@@ -30,7 +27,6 @@ public class ShipmentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public String list(Model model) {
         model.addAttribute("shipments", service.listAll());
         model.addAttribute("items", inventoryService.listAll());
@@ -43,7 +39,6 @@ public class ShipmentController {
     }
 
     @GetMapping("/edit/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public String showEditForm(@PathVariable Integer id, Model model) {
         Shipment s = service.get(id);
 
@@ -66,7 +61,6 @@ public class ShipmentController {
     }
 
     @PostMapping("/update")
-    @PreAuthorize("hasRole('ADMIN')")
     public String update(@Valid @ModelAttribute("form") ShipmentDTO dto,
                          BindingResult result, Model model, RedirectAttributes ra) {
         if (result.hasErrors()) {
@@ -80,7 +74,6 @@ public class ShipmentController {
     }
 
     @PostMapping("/receive")
-    @PreAuthorize("hasRole('ADMIN')")
     public String receive(@Valid @ModelAttribute("form") ShipmentDTO dto,
                           BindingResult result, RedirectAttributes ra, Model model) {
         if (result.hasErrors()) {
@@ -95,14 +88,12 @@ public class ShipmentController {
     }
 
     @GetMapping("/track/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public String track(@PathVariable Integer id, Model model) {
         model.addAttribute("shipment", service.get(id));
         return "admin/shipment/track";
     }
 
     @PostMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public String delete(@PathVariable Integer id, RedirectAttributes ra) {
         service.delete(id);
         ra.addFlashAttribute("success", "Shipment record removed.");

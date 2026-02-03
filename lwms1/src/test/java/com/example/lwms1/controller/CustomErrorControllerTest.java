@@ -2,29 +2,27 @@ package com.example.lwms1.controller;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class CustomErrorControllerTest {
+@ExtendWith(MockitoExtension.class)
+class CustomErrorControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @InjectMocks
+    private CustomErrorController customErrorController;
 
     @Test
-    @DisplayName("403 error page should be accessible and return correct view")
-    @WithMockUser // We use a mock user because error pages might be behind security filters
-    void testAccessDeniedView() throws Exception {
-        mockMvc.perform(get("/error/403"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/error/403"));
+    @DisplayName("403 Error: Should return the correct access denied view name")
+    void testAccessDeniedView() {
+        // ACT
+        // Note: Check your Controller method name.
+        // If it's named 'accessDenied', call that here.
+        String viewName = customErrorController.accessDenied();
+
+        // ASSERT
+        assertEquals("admin/error/403", viewName);
     }
 }

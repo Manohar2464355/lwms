@@ -15,12 +15,15 @@ public class DashboardService {
     private final MaintenanceService maintenanceService;
     private final ReportService reportService;
     private final SpaceService spaceService;
-    private final UserService userService; // Only for Admin dashboard
+    private final UserService userService;
 
     @Autowired
-    public DashboardService(InventoryService inventoryService, ShipmentService shipmentService,
-                            MaintenanceService maintenanceService, ReportService reportService,
-                            SpaceService spaceService, UserService userService) {
+    public DashboardService(InventoryService inventoryService,
+                            ShipmentService shipmentService,
+                            MaintenanceService maintenanceService,
+                            ReportService reportService,
+                            SpaceService spaceService,
+                            UserService userService) {
         this.inventoryService = inventoryService;
         this.shipmentService = shipmentService;
         this.maintenanceService = maintenanceService;
@@ -39,12 +42,27 @@ public class DashboardService {
         stats.put("reportCount", reportService.listAll().size());
         stats.put("userCount", userService.listAll().size());
 
-        // 2. The "Business Logic" Math
+        // 2. Simple Logic Math for Warehouse Utilization
         List<Space> spaces = spaceService.listAll();
-        double totalUsed = spaces.stream().mapToDouble(s -> s.getUsedCapacity() != null ? s.getUsedCapacity() : 0).sum();
-        double totalMax = spaces.stream().mapToDouble(s -> s.getTotalCapacity() != null ? s.getTotalCapacity() : 0).sum();
-        double utilization = (totalMax > 0) ? (totalUsed / totalMax) * 100 : 0;
+        double totalUsed = 0;
+        double totalMax = 0;
 
+        // Using a simple for-each loop instead of Streams
+        for (Space s : spaces) {
+            if (s.getUsedCapacity() != null) {
+                totalUsed += s.getUsedCapacity();
+            }
+            if (s.getTotalCapacity() != null) {
+                totalMax += s.getTotalCapacity();
+            }
+        }
+
+        double utilization = 0;
+        if (totalMax > 0) {
+            utilization = (totalUsed / totalMax) * 100;
+        }
+
+        // Format to 1 decimal place (e.g., "75.5%")
         stats.put("warehouseUtilization", String.format("%.1f%%", utilization));
 
         return stats;
