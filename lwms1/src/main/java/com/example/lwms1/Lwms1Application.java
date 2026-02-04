@@ -7,7 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class Lwms1Application {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Lwms1Application.class, args);
+		System.out.println("Application Started");
+        SpringApplication.run(Lwms1Application.class, args);
+        System.out.println("Application ended");
+
 	}
 
 }

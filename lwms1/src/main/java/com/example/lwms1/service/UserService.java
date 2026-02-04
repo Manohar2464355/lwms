@@ -66,8 +66,8 @@ public class UserService {
 
         return userRepo.save(user);
     }
-
     public UserAccount createUser(UserCreateDTO dto) {
+        // 1. Check if user already exists
         Optional<UserAccount> existing = userRepo.findByUsername(dto.getUsername());
         if (existing.isPresent()) {
             throw new BusinessException("Username already exists: " + dto.getUsername());
@@ -79,16 +79,15 @@ public class UserService {
         u.setPassword(encoder.encode(dto.getPassword()));
         u.setEnabled(true);
 
+        // 2. Format the role name (e.g., "ADMIN" -> "ROLE_ADMIN")
         String roleName = formatRole(dto.getRole());
-        Optional<Role> roleOpt = roleRepo.findByName(roleName);
 
-        Role role;
-        if (roleOpt.isPresent()) {
-            role = roleOpt.get();
-        } else {
-            role = roleRepo.save(new Role(roleName));
-        }
+        // 3. THE FIX: Try to find the existing role FIRST.
+        // If it exists, use it. Only if it's missing, save a new one.
+        Role role = roleRepo.findByName(roleName)
+                .orElseGet(() -> roleRepo.save(new Role(roleName)));
 
+        // 4. Assign and save
         Set<Role> roles = new HashSet<>();
         roles.add(role);
         u.setRoles(roles);
@@ -143,10 +142,23 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
-        if (!userRepo.existsById(id)) {
+        // 1. Find the user first to check their username
+        Optional<UserAccount> userOpt = userRepo.findById(id);
+
+        // 2. Simple check if user exists
+        if (userOpt.isPresent()) {
+            UserAccount user = userOpt.get();
+
+            // 3. Simple IF check to protect the 'admin' account
+            if (user.getUsername().equalsIgnoreCase("admin")) {
+                throw new BusinessException("The system administrator account cannot be deleted!");
+            }
+
+            // 4. Delete if it's not the admin
+            userRepo.deleteById(id);
+        } else {
             throw new ResourceNotFoundException("User not found with ID: " + id);
         }
-        userRepo.deleteById(id);
     }
 
     private String formatRole(String role) {

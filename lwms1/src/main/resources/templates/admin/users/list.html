@@ -76,11 +76,19 @@
                           th:text="${role.name}"></span>
                 </td>
                 <td>
-                    <form th:action="@{/admin/users/delete/{id}(id=${u.id})}" method="post">
-                        <button type="submit" onclick="return confirm('Delete?')" style="color:red; background:none; border:none; cursor:pointer;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </form>
+                    <div th:if="${u.username != 'admin'}">
+                        <form th:action="@{/admin/users/delete/{id}(id=${u.id})}" method="post">
+                            <button type="submit" onclick="return confirm('Delete this user?')" style="color:#ff4d4d; background:none; border:none; cursor:pointer;">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+
+                    <div th:if="${u.username == 'admin'}">
+                        <span style="color: #999; font-style: italic;">
+                            <i class="fas fa-lock"></i> System Protected
+                        </span>
+                    </div>
                 </td>
             </tr>
             </tbody>
