@@ -10,7 +10,7 @@
 <body>
 
 <div class="sidebar">
-    <h2>LWMS Pro</h2>
+    <h2>LWMS</h2>
     <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-home"></i> Dashboard</a>
     <a th:href="@{/user/home}" sec:authorize="hasRole('USER')"><i class="fas fa-home"></i> Home</a>
     <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
@@ -22,13 +22,24 @@
 </div>
 
 <div class="main-content">
-    <div class="header">
-        <h1>Reports Archive</h1>
-        <form th:action="@{/logout}" method="post">
-            <button type="submit" class="logout-btn">Logout</button>
-        </form>
-    </div>
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px;">
+        <h1 style="margin: 0;">Reports Archive</h1>
 
+        <div class="user-controls" style="display: flex; align-items: center; gap: 15px;">
+            <span class="username-display" style="font-weight: bold; color: #2c3e50;">
+                <i class="fas fa-user-circle" style="color: #3498db; margin-right: 5px;"></i>
+                <span th:text="${#authentication.name}">Admin</span>
+            </span>
+
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <button type="submit" style="background-color: #e74c3c; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 14px;">
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
     <div class="card" sec:authorize="hasRole('ADMIN')">
         <h3 style="margin-top:0"><i class="fas fa-file-signature"></i> Create New Archive Report</h3>
         <form th:action="@{/admin/reports/generate}" th:object="${form}" method="post" style="display:flex; gap:20px; align-items:flex-end;">

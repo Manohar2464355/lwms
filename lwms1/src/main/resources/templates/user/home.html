@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Staff Portal - LWMS Pro</title>
@@ -20,14 +21,28 @@
 </div>
 
 <div class="main-content">
-    <div class="header">
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #eee; margin-bottom: 30px;">
         <div>
-            <h1>Staff Dashboard</h1>
-            <p>Operational overview for <strong th:text="${username}">User</strong></p>
+            <h1 style="margin: 0;">Staff Dashboard</h1>
+            <p style="margin: 5px 0 0 0; color: #666;">
+                Welcome, <strong th:text="${#authentication.name}">User</strong>
+            </p>
         </div>
-        <form th:action="@{/logout}" method="post">
-            <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </form>
+
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span style="font-weight: bold; color: #2c3e50;">
+                <i class="fas fa-user-circle" style="color: #3498db;"></i>
+                <span th:text="${#authentication.name}">Guest</span>
+            </span>
+
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <button type="submit" style="background-color: #e74c3c; color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 5px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
     </div>
 
     <div class="stats-grid">

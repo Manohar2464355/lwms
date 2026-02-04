@@ -7,10 +7,12 @@ import java.time.LocalDate;
 public class MaintenanceDTO {
     private Integer scheduleId;
 
-    @NotNull @Positive
+    @NotNull(message = "Please select a piece of equipment")
+    @Positive(message = "Invalid equipment selection")
     private Integer equipmentId;
 
-    @NotBlank @Size(max = 255)
+    @NotBlank(message = "Description cannot be empty")
+    @Size(max = 255, message = "Description must be under 255 characters")
     private String description;
 
     @NotNull
@@ -18,6 +20,7 @@ public class MaintenanceDTO {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate scheduledDate;
 
+    @NotBlank(message = "Status is required")
     @NotBlank @Size(max = 50)
     private String completionStatus;
 

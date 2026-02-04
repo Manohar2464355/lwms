@@ -5,28 +5,42 @@
     <title>Edit Zone - LWMS</title>
     <link rel="stylesheet" th:href="@{/css/admin/space.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Keep validation styling consistent with your list page */
+        .is-invalid { border: 1.5px solid #e74c3c !important; background-color: #fdf2f2 !important; }
+        .error-msg { color: #e74c3c; font-size: 12px; font-weight: bold; margin-top: 5px; display: block; }
+        .btn-save { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; flex-grow: 2; font-weight: bold; }
+        .btn-cancel { background: #95a5a6; color: white; border-radius: 4px; flex-grow: 1; }
+    </style>
 </head>
 <body style="display: block;">
-<div class="main-content" style="margin: 0 auto; max-width: 500px;">
+<div class="main-content" style="margin: 0 auto; max-width: 500px; padding-top: 50px;">
     <div class="header">
         <h1><i class="fas fa-edit"></i> Edit Storage Zone</h1>
     </div>
-    <div class="card">
+    <div class="card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <form th:action="@{/admin/space/update/{id}(id=${spaceId})}" th:object="${form}" method="post">
             <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
             <div style="margin-bottom: 15px;">
                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Zone Name</label>
-                <input type="text" th:field="*{zone}" required style="width:100%; padding:8px; border:1px solid #ddd;">
-                <p th:if="${#fields.hasErrors('zone')}" th:errors="*{zone}" style="color:red; font-size:12px;"></p>
+                <input type="text" th:field="*{zone}"
+                       th:classappend="${#fields.hasErrors('zone')} ? 'is-invalid'"
+                       style="width:100%; padding:10px; border:1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                <small class="error-msg" th:if="${#fields.hasErrors('zone')}" th:errors="*{zone}"></small>
             </div>
+
             <div style="margin-bottom: 25px;">
                 <label style="display:block; font-weight:bold; margin-bottom:5px;">Total Capacity</label>
-                <input type="number" th:field="*{totalCapacity}" min="1" required style="width:100%; padding:8px; border:1px solid #ddd;">
-                <p th:if="${#fields.hasErrors('totalCapacity')}" th:errors="*{totalCapacity}" style="color:red; font-size:12px;"></p>
+                <input type="number" th:field="*{totalCapacity}"
+                       th:classappend="${#fields.hasErrors('totalCapacity')} ? 'is-invalid'"
+                       style="width:100%; padding:10px; border:1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                <small class="error-msg" th:if="${#fields.hasErrors('totalCapacity')}" th:errors="*{totalCapacity}"></small>
             </div>
+
             <div style="display: flex; gap: 10px;">
-                <button type="submit" class="btn-save">Save Changes</button>
-                <a th:href="@{/admin/space}" class="btn-cancel" style="text-decoration:none; text-align:center; flex-grow:1; line-height:35px;">Cancel</a>
+                <button type="submit" class="btn-save">Update Zone</button>
+                <a th:href="@{/admin/space}" class="btn-cancel" style="text-decoration:none; text-align:center; line-height:38px; font-weight: bold;">Cancel</a>
             </div>
         </form>
     </div>

@@ -9,7 +9,7 @@
 <body>
 
 <div class="sidebar">
-    <h2>LWMS Pro</h2>
+    <h2>LWMS</h2>
     <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-home"></i> Dashboard</a>
     <a th:href="@{/user/home}" sec:authorize="hasRole('USER')"><i class="fas fa-home"></i> Home</a>
     <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
@@ -21,8 +21,21 @@
 </div>
 
 <div class="main-content">
-    <div class="header">
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
         <h1>Warehouse Space Analysis</h1>
+
+        <div class="user-controls" style="display: flex; align-items: center; gap: 15px;">
+            <span class="username-display" style="font-weight: bold; color: #2c3e50;">
+                <i class="fas fa-user-circle" style="color: #3498db;"></i>
+                <span th:text="${#authentication.name}">Admin</span>
+            </span>
+            <form th:action="@{/logout}" method="post" style="display: inline;">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" style="background-color: #e74c3c; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 5px; font-weight: bold;">
+                    Logout
+                </button>
+            </form>
+        </div>
     </div>
 
     <div th:if="${success}" class="alert alert-success">
@@ -34,17 +47,24 @@
 
     <div class="card" sec:authorize="hasRole('ADMIN')">
         <h3><i class="fas fa-plus-circle"></i> Add New Storage Zone</h3>
-        <form th:action="@{/admin/space/add}" th:object="${form}" method="post" style="display: flex; gap: 15px; align-items: flex-end;">
+        <form th:action="@{/admin/space/add}" th:object="${form}" method="post" style="display: flex; gap: 15px; align-items: flex-start;">
             <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            <div>
+
+            <div class="form-group" style="margin-bottom: 10px;">
                 <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Zone Name</label>
-                <input type="text" th:field="*{zone}" placeholder="e.g. Zone A" required style="padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                <input type="text" th:field="*{zone}" placeholder="e.g. Zone A"
+                       th:style="${#fields.hasErrors('zone')} ? 'padding: 10px; border-radius: 5px; border: 1.5px solid #e74c3c; width: 200px; background-color: #fdf2f2;' : 'padding: 10px; border-radius: 5px; border: 1px solid #ddd; width: 200px;'">
+                <small th:if="${#fields.hasErrors('zone')}" th:errors="*{zone}" style="color: #e74c3c; font-size: 11px; font-weight: bold; margin-top: 3px; display: block;"></small>
             </div>
-            <div>
+
+            <div class="form-group" style="margin-bottom: 10px;">
                 <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Total Capacity</label>
-                <input type="number" th:field="*{totalCapacity}" min="1" required style="padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                <input type="number" th:field="*{totalCapacity}"
+                       th:style="${#fields.hasErrors('totalCapacity')} ? 'padding: 10px; border-radius: 5px; border: 1.5px solid #e74c3c; width: 150px; background-color: #fdf2f2;' : 'padding: 10px; border-radius: 5px; border: 1px solid #ddd; width: 150px;'">
+                <small th:if="${#fields.hasErrors('totalCapacity')}" th:errors="*{totalCapacity}" style="color: #e74c3c; font-size: 11px; font-weight: bold; margin-top: 3px; display: block;"></small>
             </div>
-            <button type="submit" style="background: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">Initialize Zone</button>
+
+            <button type="submit" style="background: #3498db; color: white; border: none; padding: 11px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 21px;">Initialize Zone</button>
         </form>
     </div>
 
@@ -72,7 +92,7 @@
                 </td>
 
                 <td style="width: 250px;">
-                    <div th:with="percent=${(s.usedCapacity * 100.0) / s.totalCapacity}">
+                    <div th:with="percent=${s.totalCapacity > 0 ? (s.usedCapacity * 100.0) / s.totalCapacity : 0}">
                         <div class="progress-container" style="background: #eee; border-radius: 10px; height: 10px; overflow: hidden;">
                             <div class="progress-bar"
                                  th:style="'width: ' + ${percent} + '%; height:100%; background-color: ' + (${percent} > 90 ? '#e74c3c' : (${percent} > 70 ? '#f1c40f' : '#2ecc71'))">
@@ -98,7 +118,6 @@
                 </td>
             </tr>
             </tbody>
-        </table>
         </table>
     </div>
 </div>

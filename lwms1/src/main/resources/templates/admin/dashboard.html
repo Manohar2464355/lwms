@@ -1,15 +1,37 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard - LWMS Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/admin/dashboard.css}">
+    <style>
+        /* Ensuring the header layout stays clean */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .username-display {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+        .username-display i {
+            margin-right: 5px;
+            color: #3498db;
+        }
+    </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h2>LWMS Pro</h2>
+    <h2>LWMS</h2>
     <a th:href="@{/admin/dashboard}" class="active"><i class="fas fa-home"></i> Dashboard</a>
     <a th:href="@{/inventory}"><i class="fas fa-boxes"></i> Inventory</a>
     <a th:href="@{/admin/shipments}"><i class="fas fa-truck"></i> Shipments</a>
@@ -21,10 +43,19 @@
 
 <div class="main-content">
     <div class="header">
-        <h1>Admin Control Center</h1>
-        <form th:action="@{/logout}" method="post">
-            <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </form>
+        <h1>Admin Portal</h1>
+
+        <div class="user-info">
+            <span class="username-display">
+                <i class="fas fa-user-circle"></i>
+                <span th:text="${#authentication.name}">Admin User</span>
+            </span>
+
+            <form th:action="@{/logout}" method="post">
+                <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </form>
+        </div>
     </div>
 
     <div class="stats-grid">

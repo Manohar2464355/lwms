@@ -5,6 +5,10 @@
     <title>Edit Shipment - LWMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/admin/shipment-edit.css}">
+    <style>
+        .is-invalid { border: 1.5px solid #dc3545 !important; background-color: #fff8f8 !important; }
+        .error-msg { color: #dc3545; font-size: 0.85rem; font-weight: 500; display: block; margin-top: 4px; }
+    </style>
 </head>
 <body>
 
@@ -15,24 +19,27 @@
 
         <div class="form-group">
             <label>Associated Item</label>
-            <select th:field="*{itemId}">
+            <select th:field="*{itemId}" th:classappend="${#fields.hasErrors('itemId')} ? 'is-invalid'">
                 <option th:each="i : ${items}" th:value="${i.itemId}" th:text="${i.itemName}"></option>
             </select>
+            <small class="error-msg" th:if="${#fields.hasErrors('itemId')}" th:errors="*{itemId}"></small>
         </div>
 
         <div class="form-group">
             <label>Origin</label>
-            <input type="text" th:field="*{origin}">
+            <input type="text" th:field="*{origin}" th:classappend="${#fields.hasErrors('origin')} ? 'is-invalid'">
+            <small class="error-msg" th:if="${#fields.hasErrors('origin')}" th:errors="*{origin}"></small>
         </div>
 
         <div class="form-group">
             <label>Destination</label>
-            <input type="text" th:field="*{destination}">
+            <input type="text" th:field="*{destination}" th:classappend="${#fields.hasErrors('destination')} ? 'is-invalid'">
+            <small class="error-msg" th:if="${#fields.hasErrors('destination')}" th:errors="*{destination}"></small>
         </div>
 
         <div class="form-group">
             <label>Expected Delivery</label>
-            <input type="date" th:field="*{expectedDeliveryDate}">
+            <input type="date" th:field="*{expectedDeliveryDate}" th:classappend="${#fields.hasErrors('expectedDeliveryDate')} ? 'is-invalid'">
             <small class="error-msg" th:if="${#fields.hasErrors('expectedDeliveryDate')}" th:errors="*{expectedDeliveryDate}"></small>
         </div>
 
