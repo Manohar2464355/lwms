@@ -62,7 +62,7 @@
                 <label>Item (Available Stock)</label>
                 <select th:field="*{itemId}" th:classappend="${#fields.hasErrors('itemId')} ? 'is-invalid'">
                     <option value="">-- Choose Item --</option>
-                    <option th:each="i : ${items}" th:value="${i.itemId}" th:text="${i.itemName}"></option>
+                    <option th:each="i : ${items}" th:value="${i.itemId}" th:text="${i.itemName + ' (In Stock: ' + i.quantity + ')'}">></option>
                 </select>
                 <small class="error-msg" th:if="${#fields.hasErrors('itemId')}" th:errors="*{itemId}"></small>
             </div>

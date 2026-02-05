@@ -11,10 +11,9 @@ public class Inventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer itemId;
-    // Inside Inventory.java
     @ManyToOne
     @JoinColumn(name = "space_id")
-    private Space storageSpace; // Link to the Space model
+    private Space storageSpace;
 
     @Column(length = 100, nullable = false)
     private String itemName;
@@ -32,7 +31,6 @@ public class Inventory {
 
     public Inventory() {}
 
-    // Getters and Setters
     public Integer getItemId() { return itemId; }
     public void setItemId(Integer itemId) { this.itemId = itemId; }
     public String getItemName() { return itemName; }

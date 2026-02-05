@@ -8,7 +8,6 @@ public class CustomErrorController {
 
     @GetMapping("/error/403")
     public String accessDenied() {
-        // This points to src/main/resources/templates/error/403.html
         return "admin/error/403";
     }
 }

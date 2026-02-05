@@ -8,13 +8,11 @@ import com.example.lwms1.repository.SpaceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class SpaceService {
-
     private final SpaceRepository repo;
 
     @Autowired
@@ -22,16 +20,28 @@ public class SpaceService {
         this.repo = repo;
     }
 
+    @Transactional(readOnly = true)
     public List<Space> listAll() {
         return repo.findAll();
     }
-
+    @Transactional(readOnly = true)
     public Space getById(Integer id) {
-        Optional<Space> opt = repo.findById(id);
-        if (opt.isEmpty()) {
+        Optional<Space> spaceOptional = repo.findById(id);
+        if (spaceOptional.isPresent()) {
+            return spaceOptional.get();
+        } else {
             throw new ResourceNotFoundException("Space not found with id: " + id);
         }
-        return opt.get();
+    }
+
+
+    @Transactional(readOnly = true)
+    public SpaceDTO getDtoById(Integer id) {
+        Space space = getById(id);
+        SpaceDTO dto = new SpaceDTO();
+        dto.setZone(space.getZone());
+        dto.setTotalCapacity(space.getTotalCapacity());
+        return dto;
     }
 
     @Transactional
@@ -55,10 +65,10 @@ public class SpaceService {
         s.setZone(dto.getZone());
         s.setTotalCapacity(dto.getTotalCapacity());
 
-        int available = s.getTotalCapacity() - s.getUsedCapacity();
+        int available = s.getTotalCapacity() - (s.getUsedCapacity() != null ? s.getUsedCapacity() : 0);
 
         if (available < 0) {
-            throw new BusinessException("Cannot reduce total capacity below current stock levels!");
+            throw new BusinessException("Cannot reduce total capacity below current stock levels (" + s.getUsedCapacity() + ")!");
         }
 
         s.setAvailableCapacity(available);
@@ -69,7 +79,7 @@ public class SpaceService {
     public void delete(Integer id) {
         Space s = getById(id);
 
-        if (s.getUsedCapacity() > 0) {
+        if (s.getUsedCapacity() != null && s.getUsedCapacity() > 0) {
             throw new BusinessException("Zone " + s.getZone() + " is not empty. Remove items first.");
         }
 

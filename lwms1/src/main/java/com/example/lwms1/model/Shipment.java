@@ -13,7 +13,6 @@ public class Shipment {
 
     @ManyToOne
     @JoinColumn(name = "item_id")
-// Change CASCADE to SET_NULL
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private Inventory inventory;
 
@@ -27,7 +26,6 @@ public class Shipment {
 
     public Shipment() {}
 
-    // FIXED: Now matches the 'inventory' variable
     public Inventory getInventory() { return inventory; }
     public void setInventory(Inventory inventory) { this.inventory = inventory; }
 

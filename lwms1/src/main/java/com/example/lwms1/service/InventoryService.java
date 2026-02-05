@@ -1,6 +1,4 @@
 package com.example.lwms1.service;
-
-import com.example.lwms1.controller.InventoryController;
 import com.example.lwms1.dto.InventoryDTO;
 import com.example.lwms1.exception.BusinessException;
 import com.example.lwms1.exception.ResourceNotFoundException;
@@ -9,86 +7,63 @@ import com.example.lwms1.model.Space;
 import com.example.lwms1.repository.InventoryRepository;
 import com.example.lwms1.repository.SpaceRepository;
 import com.example.lwms1.repository.MaintenanceScheduleRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class InventoryService {
-
     private final InventoryRepository repo;
     private final SpaceRepository spaceRepo;
     private final MaintenanceScheduleRepository maintenanceRepo;
-    private static final Logger logger = LoggerFactory.getLogger(InventoryService.class);
 
     @Autowired
-    public InventoryService(InventoryRepository repo,
-                            SpaceRepository spaceRepo,
-                            MaintenanceScheduleRepository maintenanceRepo) {
+    public InventoryService(InventoryRepository repo, SpaceRepository spaceRepo, MaintenanceScheduleRepository maintenanceRepo) {
         this.repo = repo;
         this.spaceRepo = spaceRepo;
         this.maintenanceRepo = maintenanceRepo;
     }
 
-    private void verifySpaceIsNotUnderMaintenance(Integer spaceId, String zoneName) {
-        boolean isLocked = maintenanceRepo.existsByEquipmentIdAndCompletionStatusIgnoreCase(spaceId, "PENDING");
-        if (isLocked) {
-            logger.warn("Account is locked",isLocked);
-            throw new BusinessException("Action Denied: Zone " + zoneName + " is currently under maintenance.");
-        }
-    }
-
-    public Inventory findById(Integer id) {
-        Optional<Inventory> itemOpt = repo.findById(id);
-        if (itemOpt.isEmpty()) {
-            throw new ResourceNotFoundException("Item not found with ID: " + id);
-        }
-        return itemOpt.get();
-    }
-
-
+    @Transactional(readOnly = true)
     public List<Inventory> listAll() {
         return repo.findAll();
     }
 
-    @Transactional
-    public void delete(Integer id) {
-        Inventory inv = findById(id);
-
-        if (inv.getLocation() != null) {
-            Optional<Space> spaceOpt = spaceRepo.findByZone(inv.getLocation());
-            if (spaceOpt.isEmpty()) {
-                throw new ResourceNotFoundException("Space not found");
-            }
-            Space space = spaceOpt.get();
-
-            verifySpaceIsNotUnderMaintenance(space.getSpaceId(), space.getZone());
-            updateSpaceCapacity(space, -inv.getQuantity());
+    @Transactional(readOnly = true)
+    public Inventory findById(Integer id) {
+        Optional<Inventory> result = repo.findById(id);
+        if (result.isPresent()) {
+            return result.get();
+        } else {
+            throw new ResourceNotFoundException("Item not found ID: " + id);
         }
-        repo.delete(inv);
+    }
+
+    @Transactional(readOnly = true)
+    public InventoryDTO getDtoById(Integer id) {
+        Inventory item = findById(id);
+        InventoryDTO dto = new InventoryDTO();
+        dto.setItemId(item.getItemId());
+        dto.setItemName(item.getItemName());
+        dto.setCategory(item.getCategory());
+        dto.setQuantity(item.getQuantity());
+        dto.setLocation(item.getLocation());
+        return dto;
     }
 
     @Transactional
     public Inventory create(InventoryDTO dto) {
-        if (dto.getLocation() == null || dto.getLocation().isEmpty()) {
-            throw new BusinessException("Storage location is required.");
+        Optional<Space> spaceOptional = spaceRepo.findByZone(dto.getLocation());
+        Space space;
+        if (spaceOptional.isPresent()) {
+            space = spaceOptional.get();
+        } else {
+            throw new ResourceNotFoundException("Space not found: " + dto.getLocation());
         }
-//optional is a class in java 1.8 to prevent null pointer exception here and there are few methods like is empty and is preset()
-        //isEmpty()-> to check data is empty or not and isPresent(0->is data present yes or not
-        Optional<Space> spaceOpt = spaceRepo.findByZone(dto.getLocation());
-        if (spaceOpt.isEmpty()) {
-            throw new ResourceNotFoundException("Target Space '" + dto.getLocation() + "' not found");
-        }
-        Space space = spaceOpt.get();
-
         verifySpaceIsNotUnderMaintenance(space.getSpaceId(), space.getZone());
-
         if (space.getAvailableCapacity() < dto.getQuantity()) {
             throw new BusinessException("Insufficient space in " + space.getZone());
         }
@@ -108,15 +83,15 @@ public class InventoryService {
     @Transactional
     public Inventory update(Integer id, InventoryDTO dto) {
         Inventory inv = findById(id);
-
-        Optional<Space> spaceOpt = spaceRepo.findByZone(inv.getLocation());
-        if (spaceOpt.isEmpty()) {
+        Optional<Space> spaceOptional = spaceRepo.findByZone(inv.getLocation());
+        Space space;
+        if (spaceOptional.isPresent()) {
+            space = spaceOptional.get();
+        } else {
             throw new ResourceNotFoundException("Space not found");
         }
-        Space space = spaceOpt.get();
 
         verifySpaceIsNotUnderMaintenance(space.getSpaceId(), space.getZone());
-
         int capacityAdjustment = dto.getQuantity() - inv.getQuantity();
 
         if (space.getAvailableCapacity() < capacityAdjustment) {
@@ -127,31 +102,35 @@ public class InventoryService {
         inv.setCategory(dto.getCategory());
         inv.setQuantity(dto.getQuantity());
         inv.setLastUpdated(LocalDateTime.now());
-
         updateSpaceCapacity(space, capacityAdjustment);
         return repo.save(inv);
     }
+    @Transactional
+    public void delete(Integer id) {
+        Inventory inv = findById(id);
+        if (inv.getLocation() != null) {
+            Space space = spaceRepo.findByZone(inv.getLocation()).orElse(null);
+            if (space != null) {
+                verifySpaceIsNotUnderMaintenance(space.getSpaceId(), space.getZone());
+                updateSpaceCapacity(space, -inv.getQuantity()); // Refund space
+            }
+        }
+        repo.delete(inv);
+    }
+
+    private void verifySpaceIsNotUnderMaintenance(Integer spaceId, String zoneName) {
+        boolean isLocked = maintenanceRepo.existsByEquipmentIdAndCompletionStatusIgnoreCase(spaceId, "PENDING");
+        if (isLocked) {
+            throw new BusinessException("Action Denied: Zone " + zoneName + " is under maintenance.");
+        }
+    }
 
     private void updateSpaceCapacity(Space space, int quantityChange) {
-        int currentUsed = 0;
-        if (space.getUsedCapacity() != null) {
-            currentUsed = space.getUsedCapacity();
-        }
-
-        int total = 0;
-        if (space.getTotalCapacity() != null) {
-            total = space.getTotalCapacity();
-        }
-
-        int newUsed = currentUsed + quantityChange;
-
-        if (newUsed < 0) {
-            newUsed = 0;
-        }
+        int newUsed = (space.getUsedCapacity() != null ? space.getUsedCapacity() : 0) + quantityChange;
+        if (newUsed < 0) newUsed = 0;
 
         space.setUsedCapacity(newUsed);
-        space.setAvailableCapacity(total - newUsed);
-
+        space.setAvailableCapacity(space.getTotalCapacity() - newUsed);
         spaceRepo.save(space);
     }
 }

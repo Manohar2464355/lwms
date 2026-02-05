@@ -49,34 +49,12 @@ public class MaintenanceController {
 
     @PostMapping("/toggle/{id}")
     public String toggleStatus(@PathVariable Integer id, RedirectAttributes ra) {
-        // Get the new status from the service
-        String status = service.toggleStatus(id);
+        String successMsg = service.toggleStatusAndGetMessage(id);
 
-        String msg;
-        if (status.equalsIgnoreCase("COMPLETED")) {
-            msg = "Maintenance finished. Zone is UNLOCKED.";
-        } else {
-            msg = "Maintenance reopened. Zone is LOCKED.";
-        }
-
-        ra.addFlashAttribute("successMessage", msg);
+        ra.addFlashAttribute("successMessage", successMsg);
         return "redirect:/admin/maintenance";
     }
 
-    @PostMapping("/update/{id}")
-    public String update(@PathVariable Integer id,
-                         @ModelAttribute("form") @Valid MaintenanceDTO dto,
-                         BindingResult result, Model model, RedirectAttributes ra) {
-        if (result.hasErrors()) {
-            model.addAttribute("schedules", service.listAll());
-            model.addAttribute("availableSpaces", spaceService.listAll());
-            return "admin/maintenance/schedule";
-        }
-
-        service.update(id, dto);
-        ra.addFlashAttribute("successMessage", "Record updated successfully.");
-        return "redirect:/admin/maintenance";
-    }
 
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable Integer id, RedirectAttributes ra) {

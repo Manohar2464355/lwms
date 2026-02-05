@@ -11,7 +11,7 @@ public class Report {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer reportId;
 
-    private String reportType; // e.g., "INVENTORY", "SHIPMENT", "SPACE", "MAINTENANCE"
+    private String reportType;
     private LocalDateTime generatedOn;
 
     @Column(columnDefinition = "TEXT")

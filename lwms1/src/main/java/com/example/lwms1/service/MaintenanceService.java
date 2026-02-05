@@ -7,6 +7,8 @@ import com.example.lwms1.repository.MaintenanceScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,62 +33,32 @@ public class MaintenanceService {
         m.setEquipmentId(dto.getEquipmentId());
         m.setDescription(dto.getDescription());
         m.setScheduledDate(dto.getScheduledDate());
-
-        // Simple logic for default status
         if (dto.getCompletionStatus() != null) {
             m.setCompletionStatus(dto.getCompletionStatus());
         } else {
             m.setCompletionStatus("PENDING");
         }
-
         return repo.save(m);
     }
 
-    /**
-     * Logic to flip the status.
-     * Explain this as a "Light Switch": PENDING means Locked, COMPLETED means Unlocked.
-     */
-    public String toggleStatus(Integer id) {
+    public String toggleStatusAndGetMessage(Integer id) {
         Optional<MaintenanceSchedule> opt = repo.findById(id);
-
         if (opt.isEmpty()) {
             throw new ResourceNotFoundException("Maintenance not found ID: " + id);
         }
-
         MaintenanceSchedule m = opt.get();
         String currentStatus = m.getCompletionStatus();
-
-        // Classic if-else logic to flip the status
-        String nextStatus;
-        if ("PENDING".equalsIgnoreCase(currentStatus)) {
-            nextStatus = "COMPLETED";
-        } else {
-            nextStatus = "PENDING";
-        }
-
+        String nextStatus = "PENDING".equalsIgnoreCase(currentStatus) ? "COMPLETED" : "PENDING";
         m.setCompletionStatus(nextStatus);
         repo.save(m);
-        return nextStatus;
-    }
-
-    public MaintenanceSchedule update(Integer id, MaintenanceDTO dto) {
-        Optional<MaintenanceSchedule> opt = repo.findById(id);
-
-        if (opt.isEmpty()) {
-            throw new ResourceNotFoundException("Maintenance not found ID: " + id);
+        if ("COMPLETED".equals(nextStatus)) {
+            return "Maintenance finished. Zone is UNLOCKED.";
+        } else {
+            return "Maintenance reopened. Zone is LOCKED.";
         }
-
-        MaintenanceSchedule m = opt.get();
-        m.setEquipmentId(dto.getEquipmentId());
-        m.setDescription(dto.getDescription());
-        m.setScheduledDate(dto.getScheduledDate());
-        m.setCompletionStatus(dto.getCompletionStatus());
-
-        return repo.save(m);
     }
 
     public void delete(Integer id) {
-        // Direct check before deleting
         if (repo.existsById(id)) {
             repo.deleteById(id);
         } else {
@@ -96,7 +68,16 @@ public class MaintenanceService {
 
     @Transactional(readOnly = true)
     public long getPendingMaintenanceCount() {
-        // This is used for the Admin Dashboard count card
         return repo.countByCompletionStatusIgnoreCase("PENDING");
+    }
+    public List<Integer> getCurrentlyLockedSpaceIds() {
+        List<MaintenanceSchedule> allSchedules = repo.findAll();
+        List<Integer> lockedIds = new ArrayList<Integer>();
+        for (MaintenanceSchedule schedule : allSchedules) {
+            if ("PENDING".equalsIgnoreCase(schedule.getCompletionStatus())) {
+                lockedIds.add(schedule.getEquipmentId());
+            }
+        }
+        return lockedIds;
     }
 }

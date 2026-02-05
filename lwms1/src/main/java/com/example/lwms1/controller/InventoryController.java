@@ -2,13 +2,11 @@ package com.example.lwms1.controller;
 
 import com.example.lwms1.dto.InventoryDTO;
 import com.example.lwms1.model.Inventory;
-import com.example.lwms1.model.MaintenanceSchedule;
-import com.example.lwms1.repository.MaintenanceScheduleRepository;
+// Import your MaintenanceService
+import com.example.lwms1.service.MaintenanceService;
 import com.example.lwms1.service.InventoryService;
 import com.example.lwms1.service.SpaceService;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,60 +14,45 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.ArrayList; // Added for simplified logic
 import java.util.List;
 
 @Controller
 @RequestMapping("/inventory")
 public class InventoryController {
-    private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
 
     private final InventoryService inventoryService;
     private final SpaceService spaceService;
-    private final MaintenanceScheduleRepository maintenanceRepo;
+    private final MaintenanceService maintenanceService;
 
     @Autowired
-    public InventoryController(InventoryService inventoryService,
-                               SpaceService spaceService,
-                               MaintenanceScheduleRepository maintenanceRepo) {
-        this.inventoryService = inventoryService;
+    public InventoryController(InventoryService invService, SpaceService spaceService, MaintenanceService maintService) {
+        this.inventoryService = invService;
         this.spaceService = spaceService;
-        this.maintenanceRepo = maintenanceRepo;
+        this.maintenanceService = maintService;
     }
 
     @GetMapping
-    public String listInventory(Model model) {
-        logger.info("List Inventory Started");
+    public String list(Model model) {
         model.addAttribute("items", inventoryService.listAll());
-        logger.info("List Inventory",inventoryService.listAll());
-
         model.addAttribute("inventoryDTO", new InventoryDTO());
-        model.addAttribute("spaces", spaceService.listAll());
-
-        // --- SIMPLIFIED LOGIC (NO STREAMS) ---
-        List<MaintenanceSchedule> allSchedules = maintenanceRepo.findAll();
-        List<Integer> lockedSpaceIds = new ArrayList<>();
-
-        for (MaintenanceSchedule schedule : allSchedules) {
-            // Check if status is PENDING (meaning the zone is currently locked)
-            if ("PENDING".equalsIgnoreCase(schedule.getCompletionStatus())) {
-                lockedSpaceIds.add(schedule.getEquipmentId());
-            }
-        }
-
-        model.addAttribute("lockedSpaceIds", lockedSpaceIds);
+        populateSpaceData(model);
         return "admin/inventory/list";
     }
-
+    @GetMapping("/edit/{id}")
+    public String showEditForm(@PathVariable Integer id, Model model) {
+        InventoryDTO existingItem = inventoryService.getDtoById(id);
+        model.addAttribute("inventoryDTO", existingItem);
+        populateSpaceData(model);
+        return "admin/inventory/edit";
+    }
     @PostMapping("/add")
     public String addItem(@Valid @ModelAttribute("inventoryDTO") InventoryDTO dto,
                           BindingResult result, RedirectAttributes ra, Model model) {
         if (result.hasErrors()) {
             model.addAttribute("items", inventoryService.listAll());
-            model.addAttribute("spaces", spaceService.listAll());
+            populateSpaceData(model);
             return "admin/inventory/list";
         }
-
         inventoryService.create(dto);
         ra.addFlashAttribute("successMessage", "Item added successfully!");
         return "redirect:/inventory";
@@ -78,8 +61,13 @@ public class InventoryController {
     @PostMapping("/update/{id}")
     public String updateItem(@PathVariable Integer id,
                              @Valid @ModelAttribute("inventoryDTO") InventoryDTO dto,
-                             BindingResult result, RedirectAttributes ra) {
+                             BindingResult result, RedirectAttributes ra, Model model) {
+
+        System.out.println("Update triggered for ID: " + id); // DEBUG LINE 1
+
         if (result.hasErrors()) {
+            System.out.println("Validation errors found: " + result.getAllErrors()); // DEBUG LINE 2
+            populateSpaceData(model);
             return "admin/inventory/edit";
         }
 
@@ -89,26 +77,14 @@ public class InventoryController {
     }
 
     @GetMapping("/delete/{id}")
-    public String deleteItem(@PathVariable Integer id, RedirectAttributes ra) {
+    public String delete(@PathVariable Integer id, RedirectAttributes ra) {
         inventoryService.delete(id);
-        ra.addFlashAttribute("successMessage", "Item removed from inventory.");
+        ra.addFlashAttribute("successMessage", "Item removed.");
         return "redirect:/inventory";
     }
 
-    @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Integer id, Model model) {
-        Inventory item = inventoryService.findById(id);
-
-        InventoryDTO dto = new InventoryDTO();
-        dto.setItemId(item.getItemId());
-        dto.setItemName(item.getItemName());
-        dto.setCategory(item.getCategory());
-        dto.setQuantity(item.getQuantity());
-        dto.setLocation(item.getLocation());
-
-        model.addAttribute("inventoryDTO", dto);
+    private void populateSpaceData(Model model) {
         model.addAttribute("spaces", spaceService.listAll());
-        return "admin/inventory/edit";
+        model.addAttribute("lockedSpaceIds", maintenanceService.getCurrentlyLockedSpaceIds());
     }
-
 }

@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 public class UserCreateDTO {
     @NotBlank @Size(min = 3, max = 60)
+    @NotBlank(message = "Name is required")
+
     private String username;
 
     @NotBlank(message = "Email is required")
@@ -21,7 +23,6 @@ public class UserCreateDTO {
 
     public UserCreateDTO() {}
 
-    // --- Add Getter and Setter for Email ---
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 

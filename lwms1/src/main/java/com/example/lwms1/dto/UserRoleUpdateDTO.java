@@ -7,9 +7,8 @@ public class UserRoleUpdateDTO {
     private String username;
 
     @NotBlank
-    private String role; // e.g., "ADMIN"
+    private String role;
 
-    // Getters and Setters
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getRole() { return role; }

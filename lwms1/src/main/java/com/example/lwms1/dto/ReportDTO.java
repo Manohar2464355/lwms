@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 public class ReportDTO {
     @NotBlank(message = "Please select a report type")
     private String reportType;
-    private String customNotes; // Optional notes to add to the auto-generated report
+    private String customNotes;
 
     public ReportDTO() {}
     public String getReportType() { return reportType; }

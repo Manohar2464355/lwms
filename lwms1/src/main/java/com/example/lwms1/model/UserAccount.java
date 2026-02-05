@@ -8,7 +8,7 @@ import java.util.Set;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "users") // Change this to "users" to match your DB
+@Table(name = "users")
 public class UserAccount {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,8 +17,7 @@ public class UserAccount {
     private String username;
 
     @Column(nullable = false)
-    private String password; // BCrypt hashed
-    // --- ADD THIS FIELD ---
+    private String password;
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -35,7 +34,7 @@ public class UserAccount {
             inverseJoinColumns = @JoinColumn(name = "role_id")
 
     )
-    private Set<Role> roles = new HashSet<>(); // Initialize here    public UserAccount() {}
+    private Set<Role> roles = new HashSet<>();
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
@@ -43,10 +42,8 @@ public class UserAccount {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // And add the getter/setter at the bottom
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    // getters & setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getUsername() { return username; }

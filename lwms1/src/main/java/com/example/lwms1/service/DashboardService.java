@@ -35,19 +35,16 @@ public class DashboardService {
     public Map<String, Object> getAllStats() {
         Map<String, Object> stats = new HashMap<>();
 
-        // 1. Basic Counts
         stats.put("inventoryCount", inventoryService.listAll().size());
         stats.put("activeShipmentsCount", shipmentService.listAll().size());
         stats.put("openMaintenanceTasks", maintenanceService.getPendingMaintenanceCount());
         stats.put("reportCount", reportService.listAll().size());
         stats.put("userCount", userService.listAll().size());
 
-        // 2. Simple Logic Math for Warehouse Utilization
         List<Space> spaces = spaceService.listAll();
         double totalUsed = 0;
         double totalMax = 0;
 
-        // Using a simple for-each loop instead of Streams
         for (Space s : spaces) {
             if (s.getUsedCapacity() != null) {
                 totalUsed += s.getUsedCapacity();
@@ -62,7 +59,6 @@ public class DashboardService {
             utilization = (totalUsed / totalMax) * 100;
         }
 
-        // Format to 1 decimal place (e.g., "75.5%")
         stats.put("warehouseUtilization", String.format("%.1f%%", utilization));
 
         return stats;

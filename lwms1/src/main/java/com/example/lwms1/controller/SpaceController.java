@@ -1,7 +1,6 @@
 package com.example.lwms1.controller;
 
 import com.example.lwms1.dto.SpaceDTO;
-import com.example.lwms1.model.Space;
 import com.example.lwms1.service.SpaceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,8 +9,6 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/admin/space")
@@ -26,8 +23,7 @@ public class SpaceController {
 
     @GetMapping
     public String usage(Model model) {
-        List<Space> spaces = service.listAll();
-        model.addAttribute("spaces", spaces);
+        model.addAttribute("spaces", service.listAll());
         model.addAttribute("form", new SpaceDTO());
         return "admin/space/usage";
     }
@@ -46,12 +42,8 @@ public class SpaceController {
 
     @GetMapping("/edit/{id}")
     public String edit(@PathVariable Integer id, Model model) {
-        Space space = service.getById(id);
-        SpaceDTO dto = new SpaceDTO();
-        dto.setZone(space.getZone());
-        dto.setTotalCapacity(space.getTotalCapacity());
-
-        model.addAttribute("form", dto);
+        // Now using the service mapping method
+        model.addAttribute("form", service.getDtoById(id));
         model.addAttribute("spaceId", id);
         return "admin/space/edit";
     }

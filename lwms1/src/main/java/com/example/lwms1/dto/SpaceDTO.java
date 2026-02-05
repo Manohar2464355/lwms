@@ -19,7 +19,6 @@ public class SpaceDTO {
 
     public SpaceDTO() {}
 
-    // Getters and Setters
     public Integer getSpaceId() { return spaceId; }
     public void setSpaceId(Integer spaceId) { this.spaceId = spaceId; }
 

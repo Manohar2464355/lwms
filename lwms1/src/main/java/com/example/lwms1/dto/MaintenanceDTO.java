@@ -26,7 +26,6 @@ public class MaintenanceDTO {
 
     public MaintenanceDTO() {}
 
-    // Getters and Setters
     public Integer getScheduleId() { return scheduleId; }
     public void setScheduleId(Integer scheduleId) { this.scheduleId = scheduleId; }
     public Integer getEquipmentId() { return equipmentId; }

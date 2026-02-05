@@ -92,7 +92,11 @@
                 <label>Storage Zone</label>
                 <select th:field="*{location}" th:classappend="${#fields.hasErrors('location')} ? 'is-invalid'">
                     <option value="">Select Zone</option>
-                    <option th:each="s : ${spaces}" th:value="${s.zone}" th:text="${s.zone + ' (' + s.availableCapacity + ' left)'}"></option>
+                    <option th:each="s : ${spaces}"
+                            th:value="${s.zone}"
+                            th:disabled="${#lists.contains(lockedSpaceIds, s.spaceId)}"
+                            th:text="${s.zone + (#lists.contains(lockedSpaceIds, s.spaceId) ? ' [MAINTENANCE]' : ' (' + s.availableCapacity + ' left)')}">
+                    </option>
                 </select>
                 <span class="error-msg" th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></span>
             </div>

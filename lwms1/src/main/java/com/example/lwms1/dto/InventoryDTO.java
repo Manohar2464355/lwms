@@ -26,7 +26,6 @@ public class InventoryDTO {
 
     public InventoryDTO() {}
 
-    // Getters and Setters
     public Integer getItemId() { return itemId; }
     public void setItemId(Integer itemId) { this.itemId = itemId; }
 

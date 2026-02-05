@@ -11,16 +11,14 @@ public class Role {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String name; // e.g., "ROLE_USER"
+    private String name;
 
-    // Constructors
     public Role() {}
 
     public Role(String name) {
         this.name = name;
     }
 
-    // Getters & Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

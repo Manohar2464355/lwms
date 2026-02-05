@@ -123,7 +123,9 @@
 <div class="auth-card">
     <h2>Join LWMS</h2>
 
-    <div th:if="${registrationError}" class="alert-error" th:text="${registrationError}"></div>
+    <div th:if="${errorMessage}" class="alert alert-error">
+        <span th:text="${errorMessage}">Database Error: User already exists.</span>
+    </div>
 
     <form th:action="@{/register}" th:object="${userDto}" method="post">
 

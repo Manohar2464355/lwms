@@ -33,7 +33,6 @@ public class ShipmentDTO {
 
     public ShipmentDTO() {}
 
-    // Getters and Setters
     public Integer getShipmentId() { return shipmentId; }
     public void setShipmentId(Integer shipmentId) { this.shipmentId = shipmentId; }
 

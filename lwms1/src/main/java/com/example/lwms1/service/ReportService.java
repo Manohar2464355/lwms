@@ -28,6 +28,7 @@ public class ReportService {
     }
 
     public List<Report> listAll() {
+
         return reportRepo.findAll();
     }
 
@@ -42,7 +43,6 @@ public class ReportService {
 
         String type = dto.getReportType();
 
-        // SIMPLIFIED LOGIC USING FOR-LOOPS INSTEAD OF STREAMS/FOREACH
         if ("INVENTORY".equals(type)) {
             content.append(String.format("%-20s | %-10s | %-15s\n", "Item", "Qty", "Location"));
             content.append("----------------------------------------------------------\n");
@@ -80,7 +80,6 @@ public class ReportService {
             }
         }
 
-        // Add admin notes if they exist
         if (dto.getCustomNotes() != null && !dto.getCustomNotes().isEmpty()) {
             content.append("\nNOTES: ").append(dto.getCustomNotes());
         }

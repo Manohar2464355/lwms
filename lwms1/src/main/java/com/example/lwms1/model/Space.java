@@ -16,7 +16,6 @@ public class Space {
     private String zone;
 
     public Space() {}
-    // getters & setters
     public Integer getSpaceId() { return spaceId; }
     public void setSpaceId(Integer spaceId) { this.spaceId = spaceId; }
     public Integer getTotalCapacity() { return totalCapacity; }
